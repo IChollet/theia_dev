@@ -1,6 +1,6 @@
 //===================================================================
 //
-// Authors: Igor Chollet
+// Authors: Igor Chollet, Pierre Marchand
 //
 //  This file is part of theia.
 //
@@ -51,51 +51,47 @@ const char* charA = "A" ;
 #endif
 
 extern "C"{
-  void sgemm_(const char*, const char*, unsigned*, unsigned*, unsigned*, BLAS_S*, BLAS_S*, 
-	      unsigned*, BLAS_S*, unsigned*, BLAS_S*, BLAS_S*, unsigned*);
-  void dgemm_(const char*, const char*, unsigned*, unsigned*, unsigned*, BLAS_D*, BLAS_D*, 
-	      unsigned*, BLAS_D*, unsigned*, BLAS_D*, BLAS_D*, unsigned*);
-  void cgemm_(const char*, const char*, unsigned*, unsigned*, unsigned*, BLAS_C*, BLAS_C*, 
-	      unsigned*, BLAS_C*, unsigned*, BLAS_C*, BLAS_C*, unsigned*);
-  void zgemm_(const char*, const char*, unsigned*, unsigned*, unsigned*, BLAS_Z*, BLAS_Z*, 
-	      unsigned*, BLAS_Z*, unsigned*, BLAS_Z*, BLAS_Z*, unsigned*);  
-  void sgemv_(const char*, int*, int*, BLAS_S*,BLAS_S*, int*, BLAS_S*, int*, BLAS_S*, BLAS_S*, int*);
-  void dgemv_(const char*, int*, int*, BLAS_D*,BLAS_D*, int*, BLAS_D*, int*, BLAS_D*, BLAS_D*, int*);
-  void cgemv_(const char*, int*, int*, BLAS_C*,BLAS_C*, int*, BLAS_C*, int*, BLAS_C*, BLAS_C*, int*);
-  void zgemv_(const char*, int*, int*, BLAS_Z*,BLAS_Z*, int*, BLAS_Z*, int*, BLAS_Z*, BLAS_Z*, int*);
+  void sgemm_(const char*, const char*, const int*, const int*, const int*, const BLAS_S*, const BLAS_S*, const int*, const BLAS_S*, const int*, const BLAS_S*, BLAS_S*, const int*);
+  void dgemm_(const char*, const char*, const int*, const int*, const int*, const BLAS_D*, const BLAS_D*, const int*, const BLAS_D*, const int*, const BLAS_D*, BLAS_D*, const int*);
+  void cgemm_(const char*, const char*, const int*, const int*, const int*, const BLAS_C*, const BLAS_C*, const int*, const BLAS_C*, const int*, const BLAS_C*, BLAS_C*, const int*);
+  void zgemm_(const char*, const char*, const int*, const int*, const int*, const BLAS_Z*, const BLAS_Z*, const int*, const BLAS_Z*, const int*, const BLAS_Z*, BLAS_Z*, const int*);  
+  void sgemv_(const char*, const int*, const int*, const BLAS_S*, const BLAS_S*, const int*, const BLAS_S*, const int*, const BLAS_S*, BLAS_S*, const int*);
+  void dgemv_(const char*, const int*, const int*, const BLAS_D*, const BLAS_D*, const int*, const BLAS_D*, const int*, const BLAS_D*, BLAS_D*, const int*);
+  void cgemv_(const char*, const int*, const int*, const BLAS_C*, const BLAS_C*, const int*, const BLAS_C*, const int*, const BLAS_C*, BLAS_C*, const int*);
+  void zgemv_(const char*, const int*, const int*, const BLAS_Z*, const BLAS_Z*, const int*, const BLAS_Z*, const int*, const BLAS_Z*, BLAS_Z*, const int*);
 }
 extern "C"{
-  void sgesvd_(const char*, const char*, unsigned*, unsigned*, BLAS_S*, unsigned*, BLAS_S*, BLAS_S*, unsigned*, BLAS_S*, unsigned*, BLAS_S*, unsigned*, int*);
-  void dgesvd_(const char*, const char*, unsigned*, unsigned*, BLAS_D*, unsigned*, BLAS_D*, BLAS_D*, unsigned*, BLAS_D*, unsigned*, BLAS_D*, unsigned*, int*);
-  void cgesvd_(const char*, const char*, unsigned*, unsigned*, BLAS_C*, unsigned*, BLAS_S*, BLAS_C*, unsigned*, BLAS_C*, unsigned*, BLAS_C*, unsigned*, BLAS_C*,int*);
-  void zgesvd_(const char*, const char*, unsigned*, unsigned*, BLAS_Z*, unsigned*, BLAS_D*, BLAS_Z*, unsigned*, BLAS_Z*, unsigned*, BLAS_Z*, unsigned*, BLAS_Z*,int*);
+  void sgesvd_(const char*, const char*, const int*, const int*, BLAS_S*, const int*, BLAS_S*, BLAS_S*, const int*, BLAS_S*, const int*, BLAS_S*, const int*,  int*);
+  void dgesvd_(const char*, const char*, const int*, const int*, BLAS_D*, const int*, BLAS_D*, BLAS_D*, const int*, BLAS_D*, const int*, BLAS_D*, const int*,  int*);
+  void cgesvd_(const char*, const char*, const int*, const int*, BLAS_C*, const int*, BLAS_S*, BLAS_C*, const int*, BLAS_C*, const int*, BLAS_C*, const int*, BLAS_S*, int*);
+  void zgesvd_(const char*, const char*, const int*, const int*, BLAS_Z*, const int*, BLAS_D*, BLAS_Z*, const int*, BLAS_Z*, const int*, BLAS_Z*, const int*, BLAS_D*, int*);
 }
 
 namespace theia{
   
   inline void gemm(BLAS_S u, BLAS_S* A, BLAS_S* B, BLAS_S v, BLAS_S* C, int _n, int _k, int _s){
-    unsigned int n = _n;  unsigned int k = _k;  unsigned int s = _s;
+    int n = _n;  int k = _k;  int s = _s;
     sgemm_(charN,charN,&n,&s,&k,&u,A,&n,B,&k, &v,C,&n);}
   inline void gemm(BLAS_D u, BLAS_D* A, BLAS_D* B, BLAS_D v, BLAS_D* C, int _n, int _k, int _s){
-    unsigned int n = _n;  unsigned int k = _k;  unsigned int s = _s;
+    int n = _n;  int k = _k;  int s = _s;
     dgemm_(charN,charN,&n,&s,&k,&u,A,&n,B,&k, &v,C,&n);}
   inline void gemTm(BLAS_S u, BLAS_S* A, BLAS_S* B, BLAS_S v, BLAS_S* C, int _n, int _k, int _s){
-    unsigned int n = _n;  unsigned int k = _k;  unsigned int s = _s;
+    int n = _n;  int k = _k;  int s = _s;
     sgemm_(charT,charN,&n,&s,&k,&u,A,&k,B,&k, &v,C,&n);}
   inline void gemTm(BLAS_D u, BLAS_D* A, BLAS_D* B, BLAS_D v, BLAS_D* C, int _n, int _k, int _s){
-    unsigned int n = _n;  unsigned int k = _k;  unsigned int s = _s;
+    int n = _n;  int k = _k;  int s = _s;
     dgemm_(charT,charN,&n,&s,&k,&u,A,&k,B,&k, &v,C,&n);}
   inline void gemm(BLAS_C u, BLAS_C* A, BLAS_C* B, BLAS_C v, BLAS_C* C, int _n, int _k, int _s){
-    unsigned int n = _n;  unsigned int k = _k;  unsigned int s = _s;
+    int n = _n;  int k = _k;  int s = _s;
     cgemm_(charN,charN,&n,&s,&k,&u,A,&n,B,&k, &v,C,&n);}
   inline void gemm(BLAS_Z u, BLAS_Z* A, BLAS_Z* B, BLAS_Z v, BLAS_Z* C, int _n, int _k, int _s){
-    unsigned int n = _n;  unsigned int k = _k;  unsigned int s = _s;
+    int n = _n;  int k = _k;  int s = _s;
     zgemm_(charN,charN,&n,&s,&k,&u,A,&n,B,&k, &v,C,&n);}
   inline void gemTm(BLAS_C u, BLAS_C* A, BLAS_C* B, BLAS_C v, BLAS_C* C, int _n, int _k, int _s){
-    unsigned int n = _n;  unsigned int k = _k;  unsigned int s = _s;
+    int n = _n;  int k = _k;  int s = _s;
     cgemm_(charT,charN,&n,&s,&k,&u,A,&k,B,&k, &v,C,&n);}
   inline void gemTm(BLAS_Z u, BLAS_Z* A, BLAS_Z* B, BLAS_Z v, BLAS_Z* C, int _n, int _k, int _s){
-    unsigned int n = _n;  unsigned int k = _k;  unsigned int s = _s;
+    int n = _n;  int k = _k;  int s = _s;
     zgemm_(charT,charN,&n,&s,&k,&u,A,&k,B,&k, &v,C,&n);}
   
   inline void gemv(BLAS_S u, BLAS_S* A, BLAS_S* x, BLAS_S v, BLAS_S* y, int L, int K){int n = L; int s = K; sgemv_(charN, &n, &s, &u, A, &n, x, &IN_ONE, &v, y, &IN_ONE);}
@@ -108,36 +104,36 @@ namespace theia{
   inline void gemTv(BLAS_Z u, BLAS_Z* A, BLAS_Z* x, BLAS_Z v, BLAS_Z* y, int L, int K){int n = L; int s = K; zgemv_(charT, &n, &s, &u, A, &n, x, &IN_ONE, &v, y, &IN_ONE);}
 
   inline void gesvd( BLAS_S *A, BLAS_S *U, BLAS_S *s, BLAS_S *V, int NbRow, int NbCol){
-    unsigned int n = NbRow; unsigned int m = NbCol; int INF; int minMN = (n<m ? n : m);
-    unsigned int nwk  = 5*minMN+(n>m ? n : m);
+    int n = NbRow; int m = NbCol; int INF; int minMN = (n<m ? n : m);
+    int nwk  = 5*minMN+(n>m ? n : m);
     BLAS_S      *wk   = new BLAS_S[nwk];
-    unsigned int ldvt = (minMN<n ? minMN : n);
+    int ldvt = (minMN<n ? minMN : n);
     sgesvd_(charS, charS, &n, &m, A, &n, s, U, &n, V, &ldvt, wk, &nwk, &INF);
     delete [] wk;
   }
   inline void gesvd( BLAS_D *A, BLAS_D *U, BLAS_D *s, BLAS_D *V, int NbRow, int NbCol){
-    unsigned int n = NbRow; unsigned int m = NbCol; int INF; int minMN = (n<m ? n : m);
-    unsigned int nwk  = 5*minMN+(n>m ? n : m);
+    int n = NbRow; int m = NbCol; int INF; int minMN = (n<m ? n : m);
+    int nwk  = 5*minMN+(n>m ? n : m);
     BLAS_D      *wk   = new BLAS_D[nwk];
-    unsigned int ldvt = (minMN<n ? minMN : n);
+    int ldvt = (minMN<n ? minMN : n);
     dgesvd_(charS, charS, &n, &m, A, &n, s, U, &n, V, &ldvt, wk, &nwk, &INF);
     delete [] wk;
   } 
   inline void gesvd( BLAS_C *A, BLAS_C *U, BLAS_S *s, BLAS_C *V, int NbRow, int NbCol){
-    unsigned int n = NbRow; unsigned int m = NbCol; int INF; int minMN = (n<m ? n : m);
-    BLAS_C* rwk = new BLAS_C[5*minMN];
-    unsigned int nwk = 2*minMN+(n>m ? n : m);
+    int n = NbRow; int m = NbCol; int INF; int minMN = (n<m ? n : m);
+    BLAS_S* rwk = new BLAS_S[5*minMN];
+    int nwk = 2*minMN+(n>m ? n : m);
     BLAS_C* wk  = new BLAS_C[nwk];
-    unsigned int ldvt = (minMN<n ? minMN : n);
+    int ldvt = (minMN<n ? minMN : n);
     cgesvd_(charS, charS, &n, &m, A, &n, s, U, &n, V, &ldvt, wk, &nwk, rwk, &INF);
     delete [] rwk; delete [] wk;
   }
   inline void gesvd( BLAS_Z *A, BLAS_Z *U, BLAS_D *s, BLAS_Z *V, int NbRow, int NbCol){
-    unsigned int n = NbRow; unsigned int m = NbCol; int INF; int minMN = (n<m ? n : m);
-    BLAS_Z* rwk = new BLAS_Z[5*minMN];
-    unsigned int nwk = 2*minMN+(n>m ? n : m);
+    int n = NbRow; int m = NbCol; int INF; int minMN = (n<m ? n : m);
+    BLAS_D* rwk = new BLAS_D[5*minMN];
+    int nwk = 2*minMN+(n>m ? n : m);
     BLAS_Z* wk  = new BLAS_Z[nwk];
-    unsigned int ldvt = (minMN<n ? minMN : n);
+    int ldvt = (minMN<n ? minMN : n);
     zgesvd_(charS, charS, &n, &m, A, &n, s, U, &n, V, &ldvt, wk, &nwk, rwk, &INF);
     delete [] rwk; delete [] wk;
   }
