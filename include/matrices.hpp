@@ -226,6 +226,64 @@ namespace theia{
   inline void gesvd<std::complex<double> >(std::complex<double> *A, int NbRowAndCol, lrmat<std::complex<double> >& lowrank, double& epsilon){
     gesvd<double>(A,NbRowAndCol,lowrank,epsilon);}
 
+  //////////////////////////////
+  ///// Fixed rank
+  
+  // Only for square matrices
+  template<typename FLT>
+  inline void gesvd_fixed_rank(FLT *A, int NbRowAndCol, lrmat<FLT>& lowrank, int rank){
+    FLT *S = new FLT[NbRowAndCol];
+    FLT *U = new FLT[NbRowAndCol*NbRowAndCol];
+    FLT *V = new FLT[NbRowAndCol*NbRowAndCol];
+    gesvd(A,U,S,V,NbRowAndCol,NbRowAndCol);
+    lowrank.m = NbRowAndCol;
+    lowrank.n = NbRowAndCol;
+    lowrank.r = rank;
+    lowrank.U = new FLT[lowrank.r*NbRowAndCol];
+    lowrank.V = new FLT[lowrank.r*NbRowAndCol];
+    for(int i = 0; i < NbRowAndCol; i++){
+      for(int j = 0; j < lowrank.r; j++){
+	lowrank.U[i + j*NbRowAndCol] = U[i + j*NbRowAndCol];
+      }
+    }
+    for(int i = 0; i < lowrank.r; i++){
+      for(int j = 0; j < NbRowAndCol; j++){
+	lowrank.V[i + j*lowrank.r] = S[i] * V[i + j*NbRowAndCol];
+      }
+    }
+  }
+
+  template<typename FLT>
+  inline void gesvd_fixed_rank(std::complex<FLT> *A, int NbRowAndCol, lrmat<std::complex<FLT> >& lowrank, int rank){
+    FLT               *S = new              FLT [NbRowAndCol];
+    std::complex<FLT> *U = new std::complex<FLT>[NbRowAndCol*NbRowAndCol];
+    std::complex<FLT> *V = new std::complex<FLT>[NbRowAndCol*NbRowAndCol];
+    gesvd(A,U,S,V,NbRowAndCol,NbRowAndCol);
+    lowrank.m = NbRowAndCol;
+    lowrank.n = NbRowAndCol;
+    lowrank.r = rank;
+    lowrank.U = new std::complex<FLT>[lowrank.r*NbRowAndCol];
+    lowrank.V = new std::complex<FLT>[lowrank.r*NbRowAndCol];
+    for(int i = 0; i < NbRowAndCol; i++){
+      for(int j = 0; j < lowrank.r; j++){
+	lowrank.U[i + j*NbRowAndCol] = U[i + j*NbRowAndCol];
+      }
+    }
+    for(int i = 0; i < lowrank.r; i++){
+      for(int j = 0; j < NbRowAndCol; j++){
+	lowrank.V[i + j*lowrank.r] = S[i] * V[i + j*NbRowAndCol];
+      }
+    }
+  }
+  template<>
+  inline void gesvd_fixed_rank<std::complex<float > >(std::complex<float> *A, int NbRowAndCol, lrmat<std::complex<float> >& lowrank, int rank){
+    gesvd_fixed_rank<float>(A,NbRowAndCol,lowrank,rank);}
+  template<>
+  inline void gesvd_fixed_rank<std::complex<double> >(std::complex<double> *A, int NbRowAndCol, lrmat<std::complex<double> >& lowrank, int rank){
+    gesvd_fixed_rank<double>(A,NbRowAndCol,lowrank,rank);}
+  //////////////////////////////
+  
+
   template<typename FLT>
   inline double nrm2(FLT* v, int n){
     double res = 0.;

@@ -106,29 +106,30 @@ namespace theia{
   template<typename T, typename FLT, int DIM, class KRNL, int ITYPE>  class lits{
   private:
     
-    T*      Sl;                  // Left    polynomials
-    T*      Sr;                  // Right   polynomials
-    T*      A;                   // Central symbolic matrix
-    int     L;                   // Interpolation order
-    FLT*    minsl;               // Left    lower interval bounds
-    FLT*    maxsl;               // Left    maximal interval bounds
-    int     Nl;                  // Left    number of particles
-    std::array<FLT,DIM>* prtsl;  // Left    particles
-    FLT*    minsr;               // Right   [...]
-    FLT*    maxsr;               // Right   [...]
-    int     Nr;                  // Right   [...]
-    std::array<FLT,DIM>* prtsr;  // Right   [...]
-    int    r;                    // Left and right ranks
-    lrmat<T> UV;                 // Low-rank factorization of A
-    T*     SlU;                  // Final left term 
-    T*     VSr;                  // Final right term
-    KRNL*  K;                    // Kernel reference
+    T*      Sl;                      // Left    polynomials
+    T*      Sr;                      // Right   polynomials
+    T*      A;                       // Central symbolic matrix
+    int     L;                       // Interpolation order
+    FLT*    minsl;                   // Left    lower interval bounds
+    FLT*    maxsl;                   // Left    maximal interval bounds
+    int     Nl;                      // Left    number of particles
+    std::array<FLT,DIM>* prtsl;      // Left    particles
+    FLT*    minsr;                   // Right   [...]
+    FLT*    maxsr;                   // Right   [...]
+    int     Nr;                      // Right   [...]
+    std::array<FLT,DIM>* prtsr;      // Right   [...]
+    int    r;                        // Left and right ranks
+    lrmat<T> UV;                     // Low-rank factorization of A
+    KRNL*  K;                        // Kernel reference
+    T*     SlU;                       // Final left term 
+    T*     VSr;                       // Final right term
+    int    rank_of_compressed_matrix; // Rank of the compressed output matrix 
     
-  public :
-    lits(){}
+  public:
+    
     lits(FLT* minsl_, FLT* maxsl_, std::array<FLT,DIM>* prtsl_, int Nl_,
-	     FLT* minsr_, FLT* maxsr_, std::array<FLT,DIM>* prtsr_, int Nr_,
-	     int L_, KRNL* K_){
+	 FLT* minsr_, FLT* maxsr_, std::array<FLT,DIM>* prtsr_, int Nr_,
+	 int L_, KRNL* K_){
       L = L_; prtsl = prtsl_; Nl = Nl_; K = K_;
       minsl = new FLT[DIM];
       maxsl = new FLT[DIM];
@@ -143,8 +144,9 @@ namespace theia{
 	minsr[k] = minsr_[k];
 	maxsr[k] = maxsr_[k];
       }
+      rank_of_compressed_matrix = -1;
     }
-
+    
     void get_source_nodes(std::array<FLT,DIM>*& py, int& number_of_nodes){
       number_of_nodes = myintpow(L,DIM);
       py = new std::array<FLT,DIM>[number_of_nodes];
@@ -168,10 +170,11 @@ namespace theia{
       get_polynomials<DIM,FLT,T,ITYPE>(L,Sl,minsl,maxsl,prtsl,Nl);
       gesvd<T>(A,r,UV,epsilon);
       //paca<T>(A,r,UV,epsilon);
-      SlU = new T[Nl*UV.r];
-      VSr = new T[Nr*UV.r];
-      gemTm(1.,Sl,UV.U,0.,SlU,Nl,r,UV.r);
-      gemm (1.,UV.V,Sr,0.,VSr,UV.r,r,Nr);
+      rank_of_compressed_matrix = UV.r;
+      SlU = new T[Nl*rank_of_compressed_matrix];
+      VSr = new T[Nr*rank_of_compressed_matrix];
+      gemTm(1.,Sl,UV.U,0.,SlU,Nl,r,rank_of_compressed_matrix);
+      gemm (1.,UV.V,Sr,0.,VSr,rank_of_compressed_matrix,r,Nr);
       std::free(A);
       std::free(Sl);
       std::free(Sr);
@@ -180,14 +183,94 @@ namespace theia{
     }
 
     friend void gemm(lits<T,FLT,DIM,KRNL,ITYPE>& A, T* B, T* C, int nrhs){
-      T* tmp0 = new T[A.UV.r*nrhs];
-      gemm(1.,A.VSr,B,   0., tmp0,A.UV.r, A.Nr  ,nrhs);
-      gemm(1.,A.SlU,tmp0,0., C   ,A.Nl  , A.UV.r,nrhs);
+      T* tmp0 = new T[A.rank_of_compressed_matrix*nrhs];
+      gemm(1.,A.VSr,B,0.,tmp0,A.rank_of_compressed_matrix,A.Nr,nrhs);
+      gemm(1.,A.SlU,tmp0,0., C,A.Nl, A.rank_of_compressed_matrix,nrhs);
+    }
+    
+    /*
+      Get interpolation + SVD compression with output arrays given by user.
+      /!\ Arrays are allocated inside this finction /!\
+      Rank of returned matrix is also returned in argument "rank"
+    */
+    void get_UV(double epsilon, T*& _SlU, T*& _VSr, int& rank){
+      int Ld  = myintpow(L,DIM);
+      A       = new T  [Ld*Ld];
+      std::array<FLT,DIM> *px = new std::array<FLT,DIM>[Ld];
+      std::array<FLT,DIM> *py = new std::array<FLT,DIM>[Ld];
+      r = myintpow(L,DIM);
+      get_multivariate_interp_nodes<DIM,FLT,ITYPE>(L,minsr,maxsr,py);
+      get_multivariate_interp_nodes<DIM,FLT,ITYPE>(L,minsl,maxsl,px);
+      get_symbolic_matrix<DIM,FLT,T,KRNL>(px,py,r,r,A,K);
+      get_polynomials<DIM,FLT,T,ITYPE>(L,Sr,minsr,maxsr,prtsr,Nr);
+      get_polynomials<DIM,FLT,T,ITYPE>(L,Sl,minsl,maxsl,prtsl,Nl);
+      gesvd<T>(A,r,UV,epsilon);
+      //paca<T>(A,r,UV,epsilon);
+      rank_of_compressed_matrix = UV.r;
+      _SlU = new T[Nl*rank_of_compressed_matrix];
+      _VSr = new T[Nr*rank_of_compressed_matrix];
+      gemTm(1.,Sl,UV.U,0.,_SlU,Nl,r,rank_of_compressed_matrix);
+      gemm (1.,UV.V,Sr,0.,_VSr,rank_of_compressed_matrix,r,Nr);
+      rank = rank_of_compressed_matrix;
+      std::free(A);
+      std::free(Sl);
+      std::free(Sr);
+      std::free(UV.U);
+      std::free(UV.V);
     }
 
-    friend int Rank(lits<T,FLT,DIM,KRNL,ITYPE>& A){return A.UV.r;}
+    /* Here, the rank is fixed */
+    void get_UV(int rank, T*& _SlU, T*& _VSr){
+      int Ld  = myintpow(L,DIM);
+      if(rank > Ld){std::cout << "Required rank is higher than possible one using interpolation" << std::endl; exit(1);}
+      A       = new T  [Ld*Ld];
+      std::array<FLT,DIM> *px = new std::array<FLT,DIM>[Ld];
+      std::array<FLT,DIM> *py = new std::array<FLT,DIM>[Ld];
+      r = myintpow(L,DIM);
+      get_multivariate_interp_nodes<DIM,FLT,ITYPE>(L,minsr,maxsr,py);
+      get_multivariate_interp_nodes<DIM,FLT,ITYPE>(L,minsl,maxsl,px);
+      get_symbolic_matrix<DIM,FLT,T,KRNL>(px,py,r,r,A,K);
+      get_polynomials<DIM,FLT,T,ITYPE>(L,Sr,minsr,maxsr,prtsr,Nr);
+      get_polynomials<DIM,FLT,T,ITYPE>(L,Sl,minsl,maxsl,prtsl,Nl);
+      gesvd_fixed_rank<T>(A,r,UV,rank);
+      rank_of_compressed_matrix = UV.r;
+      _SlU = new T[Nl*rank_of_compressed_matrix];
+      _VSr = new T[Nr*rank_of_compressed_matrix];
+      gemTm(1.,Sl,UV.U,0.,_SlU,Nl,r,rank_of_compressed_matrix);
+      gemm (1.,UV.V,Sr,0.,_VSr,rank_of_compressed_matrix,r,Nr);
+      rank = rank_of_compressed_matrix;
+      std::free(A);
+      std::free(Sl);
+      std::free(Sr);
+      std::free(UV.U);
+      std::free(UV.V);
+    }
+
+    friend int Rank(lits<T,FLT,DIM,KRNL,ITYPE>& A){return A.rank_of_compressed_matrix;}
 
   }; // lits
+  
+  template<typename T, typename FLT, int DIM, class KRNL>
+  void get_lits_cheb(FLT* minsl_, FLT* maxsl_, std::array<FLT,DIM>* prtsl_, int Nl_,
+		FLT* minsr_, FLT* maxsr_, std::array<FLT,DIM>* prtsr_, int Nr_,
+		int L_, KRNL* K_, double epsilon, T*& _SlU, T*& _VSr, int& rank){
+    lits<T,FLT,DIM,KRNL,0> GL(minsl_,maxsl_,prtsl_,Nl_,
+			      minsr_,maxsr_,prtsr_,Nr_,
+			      L_, K_);
+    GL.get_UV(epsilon, _SlU, _VSr, rank);
+  }
+
+  template<typename T, typename FLT, int DIM, class KRNL>
+  void get_lits_cheb_fixed_rank(FLT* minsl_, FLT* maxsl_, std::array<FLT,DIM>* prtsl_, int Nl_,
+				FLT* minsr_, FLT* maxsr_, std::array<FLT,DIM>* prtsr_, int Nr_,
+				int L_, KRNL* K_, double epsilon, T*& _SlU, T*& _VSr, int rank){
+    lits<T,FLT,DIM,KRNL,0> GL(minsl_,maxsl_,prtsl_,Nl_,
+			      minsr_,maxsr_,prtsr_,Nr_,
+			      L_, K_);
+    GL.get_UV(rank, _SlU, _VSr);
+  }
+
+
 
 }// THEIA
 #endif

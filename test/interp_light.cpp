@@ -28,29 +28,33 @@ public :
 int main(int argc, char* argv[]){
 
   // Parameters
-  int   NN   = 1000;
+  int   Nx   = 1000;
+  int   Ny   = 781;
   int   L    = 7;
-  std::array<double,3>*  X    = new std::array<double,3>[NN];
-  std::array<double,3>*  Y    = new std::array<double,3>[NN];
-  double*  q    = new double[NN];
-  double*  a    = new double[NN];
-  double*  e    = new double[NN];
+  std::array<double,3>*  X    = new std::array<double,3>[Nx];
+  std::array<double,3>*  Y    = new std::array<double,3>[Ny];
+  double*  q    = new double[Ny];
+  double*  a    = new double[Nx];
+  double*  e    = new double[Nx];
   light Kernel;
   double minsX[3]; minsX[0] = 0.;  minsX[1] = 0.; minsX[2] = 0.;
   double maxsX[3]; maxsX[0] = 1.;  maxsX[1] = 1.; maxsX[2] = 1.;
   double minsY[3]; minsY[0] = 0.;  minsY[1] = 0.; minsY[2] = 2.;
   double maxsY[3]; maxsY[0] = 1.;  maxsY[1] = 1.; maxsY[2] = 3.;
-  for(int i = 0; i < NN; i++){
+  for(int i = 0; i < Nx; i++){
     for(int k = 0; k < 3; k++){
       double xx = minsX[k] + urand * (maxsX[k] - minsX[k]);
-      double yy = minsY[k] + urand * (maxsY[k] - minsY[k]);
       X[i][k] = xx;
+    }
+  }
+  for(int i = 0; i < Ny; i++){
+    for(int k = 0; k < 3; k++){
+      double yy = minsY[k] + urand * (maxsY[k] - minsY[k]);
       Y[i][k] = yy;
     }
     q[i] = urand;
   }
-  int Nx = NN;
-  int Ny = NN;
+
 
   // Lagrange Interpolation for Target and Sources (LITS)
   // a) Declare interpolation matrices on two clusters
@@ -74,8 +78,8 @@ int main(int argc, char* argv[]){
 	      3,
 	      light,
 	      0>
-    GL(minsX,maxsX,X,NN,
-       minsY,maxsY,Y,NN,
+    GL(minsX,maxsX,X,Nx,
+       minsY,maxsY,Y,Ny,
        L, &Kernel);
   // b) Precompute the low-rank version (SVD precision as input)
   GL.get_UV(1.e-7);
@@ -84,15 +88,35 @@ int main(int argc, char* argv[]){
 
   // Tests and output
   std::cout << "Rank of interpolated matrix: " << Rank(GL) << std::endl;
-  double Mat[NN*NN];
-  Kernel(X,NN,Y,NN,Mat);
-  theia::gemm(1.,Mat,q,0.,e,NN,NN,1);
+  double Mat[Nx*Ny];
+  Kernel(X,Nx,Y,Ny,Mat);
+  theia::gemm(1.,Mat,q,0.,e,Nx,Ny,1);
   double errmax = 0.;
-  for(int i = 0; i < NN; i++){
+  for(int i = 0; i < Nx; i++){
     double loc_err = std::abs(a[i]-e[i])/std::abs(e[i]);
     if(loc_err > errmax){errmax = loc_err;}
   }
   std::cout << "Error: " << errmax << std::endl;
-  
+
+  // Test on second prototype
+  double *U, *V; int rank;
+  theia::get_lits_cheb<double,
+		       double,
+		       3,
+		       light>(minsX,maxsX,X,Nx,
+			      minsY,maxsY,Y,Ny,
+			      L, &Kernel, 1.e-7,
+			      U, V, rank);
+  //GL.get_UV(1.e-7, U, V, rank);
+  double* tmp0 = new double[rank];
+  theia::gemm(1.,V,q,0.,tmp0,rank,Ny, 1);
+  theia::gemm(1.,U,tmp0,0.,a,Nx, rank,1);
+  errmax = 0.;
+  for(int i = 0; i < Nx; i++){
+    double loc_err = std::abs(a[i]-e[i])/std::abs(e[i]);
+    if(loc_err > errmax){errmax = loc_err;}
+  }
+  std::cout << "Error (function-like prototype): " << errmax << std::endl;
+
   return 0;
 }
