@@ -28,7 +28,7 @@ public :
 int main(int argc, char* argv[]){
 
   // Parameters
-  int   Nx   = 1000;
+  int   Nx   = 428;
   int   Ny   = 781;
   int   L    = 7;
   std::array<double,3>*  X    = new std::array<double,3>[Nx];
@@ -100,17 +100,27 @@ int main(int argc, char* argv[]){
 
   // Test on second prototype
   double *U, *V; int rank;
+  /*
   theia::get_lits_cheb<double,
-		       double,
-		       3,
-		       light>(minsX,maxsX,X,Nx,
-			      minsY,maxsY,Y,Ny,
-			      L, &Kernel, 1.e-7,
-			      U, V, rank);
+	      double,
+	      3,
+	      light>(minsX,maxsX,X,Nx,
+		     minsY,maxsY,Y,Ny,
+		     L, &Kernel,
+		     1.e-7, U, V, rank);
+  */
+  int frank = 50;
+  theia::get_lits_cheb_fixed_rank<double,
+				  double,
+				  3,
+				  light>(minsX,maxsX,X,Nx,
+					 minsY,maxsY,Y,Ny,
+					 L, &Kernel,
+					 1.e-7, U, V, frank);
   //GL.get_UV(1.e-7, U, V, rank);
-  double* tmp0 = new double[rank];
-  theia::gemm(1.,V,q,0.,tmp0,rank,Ny, 1);
-  theia::gemm(1.,U,tmp0,0.,a,Nx, rank,1);
+  double* tmp0 = new double[frank];
+  theia::gemm(1.,V,q,0.,tmp0,frank,Ny, 1);
+  theia::gemm(1.,U,tmp0,0.,a,Nx, frank,1);
   errmax = 0.;
   for(int i = 0; i < Nx; i++){
     double loc_err = std::abs(a[i]-e[i])/std::abs(e[i]);
