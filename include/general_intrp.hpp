@@ -233,7 +233,7 @@ namespace theia{
       get_polynomials<DIM,FLT,T,ITYPE>(L,Sr,minsr,maxsr,prtsr,Nr);
       get_polynomials<DIM,FLT,T,ITYPE>(L,Sl,minsl,maxsl,prtsl,Nl);
       gesvd_fixed_rank<T>(A,r,UV,rank);
-      rank_of_compressed_matrix = UV.r;
+      rank_of_compressed_matrix = rank;;
       _SlU = new T[Nl*rank_of_compressed_matrix];
       _VSr = new T[Nr*rank_of_compressed_matrix];
       gemTm(1.,Sl,UV.U,0.,_SlU,Nl,r,rank_of_compressed_matrix);

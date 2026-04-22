@@ -109,7 +109,7 @@ int main(int argc, char* argv[]){
 		     L, &Kernel,
 		     1.e-7, U, V, rank);
   */
-  int frank = 50;
+  int frank = 10;
   theia::get_lits_cheb_fixed_rank<double,
 				  double,
 				  3,
