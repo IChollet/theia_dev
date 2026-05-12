@@ -36,7 +36,7 @@ namespace theia{
 
   template<int DIM, int KRNL, typename FLT, typename T>
   inline void get_symbolic_matrix(std::array<FLT,DIM>* px, std::array<FLT,DIM>* py, 
-				  int Nx, int Ny, T*& A){
+				  int Nx, int Ny, T* A){
     for(int j = 0; j < Ny; j++){
       for(int i = 0; i < Nx; i++){
 	A[j*Nx+i] = kernel<DIM,KRNL,T,FLT>(px[i],py[j]);
@@ -47,7 +47,7 @@ namespace theia{
   
   template<int DIM, typename FLT, typename T, class KRNL>
   inline void get_symbolic_matrix(std::array<FLT,DIM>* px, std::array<FLT,DIM>* py, 
-				  int Nx, int Ny, T*& A, KRNL* K){
+				  int Nx, int Ny, T* A, KRNL* K){
     (*K)(px, Nx, py, Ny, A);
   }
 
