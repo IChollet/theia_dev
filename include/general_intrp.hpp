@@ -48,7 +48,8 @@ namespace theia{
 			      FLT* mins, FLT* maxs,
 			      std::array<FLT,DIM>* prts, int N){
     int Ld  = myintpow(L,DIM);
-    S       = new T   [Ld*N];
+    if(S == nullptr)
+      S     = new T   [Ld*N];
     FLT **V = new FLT*[DIM];
     for(int k = 0; k < DIM; k++){
       V[k] = new FLT[L*N];
@@ -76,10 +77,48 @@ namespace theia{
     }
   }
 
+  /*
+    mins  : min bounds of cell (FLT*)
+    maxs  : max bounds of cell (FLT*)
+    N     : number of particles (int)
+    py    : particle array (std::array<FLT,DIM>*)
+    L     : interpolation order (int)
+    A     : P2M matrix (FLT*)
+  */
+  template<int DIM, typename T, typename FLT, int ITYPE>
+  inline void get_P2M(FLT* mins, FLT* maxs,
+		      int N, std::array<FLT,DIM>* py,
+		      int L, T* A){
+    get_polynomials<DIM,FLT,T,ITYPE>(L,A,mins,maxs,py,N);
+  }
+
+  /*
+  template<int DIM, typename T, typename FLT, int I_TYPE>
+  inline void get_M2L(FLT* minsX, FLT* maxsX, int Lx,
+		      FLT* minsY, FLT* maxsY, int Ly,
+		      T* U, T* V, int& rank){
+    int Lxd  = myintpow(Lx,DIM);
+    int Lyd  = myintpow(Lx,DIM);
+    A        = new T  [Lxd*Lyd];
+    std::array<FLT,DIM> *px = new std::array<FLT,DIM>[Lxd];
+    std::array<FLT,DIM> *py = new std::array<FLT,DIM>[Lyd];
+    get_multivariate_interp_nodes<DIM,FLT,ITYPE>(Lx,minsr,maxsr,py);
+    get_multivariate_interp_nodes<DIM,FLT,ITYPE>(Ly,minsl,maxsl,px);
+    get_symbolic_matrix<DIM,FLT,T,KRNL>(px,py,Lxd,Lyd,A,K);
+    lrmat<T> UV;
+    gesvd<T>(A,r,UV,epsilon);
+    rank = UV.r;
+    for(int i = 0; i < Lxd; i++){
+      for(int k = 0; k < rank; k++){
+      }
+    }
+  }
+  */
+
   template<int DIM, typename FLT, int LEFT_TYPE, int RIGHT_TYPE>
-  inline void get_reinterpolation_matrices(int * left_L, FLT*  left_mins, FLT*  left_maxs,
-					   int *right_L, FLT* right_mins, FLT* right_maxs,
-					   Kron<DIM,FLT>& A){
+  inline void get_M2M(int * left_L, FLT*  left_mins, FLT*  left_maxs,
+		      int *right_L, FLT* right_mins, FLT* right_maxs,
+		      Kron<DIM,FLT>& A){
     FLT **S  = new FLT*[DIM];
     for(int d = 0; d < DIM; d++){
       S [d]     = new FLT[left_L[d]*right_L[d]];
@@ -94,8 +133,10 @@ namespace theia{
 	}
       }
     }
-    A(S,left_L,right_L);
+    A.set(S,left_L,right_L);
   }
+
+  // AJOUTER une fonction qui prend en argument une liste de cellules filles et une cellule mère, et qui calcule la matrice de réinterpolation sur la mère (structure de liste de prod de kron)
   
   // Templates :
   //     T     : Kernel type
@@ -106,23 +147,23 @@ namespace theia{
   template<typename T, typename FLT, int DIM, class KRNL, int ITYPE>  class lits{
   private:
     
-    T*      Sl;                      // Left    polynomials
-    T*      Sr;                      // Right   polynomials
-    T*      A;                       // Central symbolic matrix
-    int     L;                       // Interpolation order
-    FLT*    minsl;                   // Left    lower interval bounds
-    FLT*    maxsl;                   // Left    maximal interval bounds
-    int     Nl;                      // Left    number of particles
-    std::array<FLT,DIM>* prtsl;      // Left    particles
-    FLT*    minsr;                   // Right   [...]
-    FLT*    maxsr;                   // Right   [...]
-    int     Nr;                      // Right   [...]
-    std::array<FLT,DIM>* prtsr;      // Right   [...]
-    int    r;                        // Left and right ranks
-    lrmat<T> UV;                     // Low-rank factorization of A
-    KRNL*  K;                        // Kernel reference
-    T*     SlU;                       // Final left term 
-    T*     VSr;                       // Final right term
+    T*      Sl = nullptr;             // Left    polynomials
+    T*      Sr = nullptr;             // Right   polynomials
+    T*      A = nullptr;              // Central symbolic matrix
+    int     L;                        // Interpolation order
+    FLT*    minsl;                    // Left    lower interval bounds
+    FLT*    maxsl;                    // Left    maximal interval bounds
+    int     Nl;                       // Left    number of particles
+    std::array<FLT,DIM>* prtsl;       // Left    particles
+    FLT*    minsr;                    // Right   [...]
+    FLT*    maxsr;                    // Right   [...]
+    int     Nr;                       // Right   [...]
+    std::array<FLT,DIM>* prtsr;       // Right   [...]
+    int    r;                         // Left and right ranks
+    lrmat<T> UV;                      // Low-rank factorization of A
+    KRNL*  K;                         // Kernel reference
+    T*     SlU = nullptr;             // Final left term 
+    T*     VSr = nullptr;             // Final right term
     int    rank_of_compressed_matrix; // Rank of the compressed output matrix 
     
   public:
@@ -226,19 +267,17 @@ namespace theia{
       A       = new T  [Ld*Ld];
       std::array<FLT,DIM> *px = new std::array<FLT,DIM>[Ld];
       std::array<FLT,DIM> *py = new std::array<FLT,DIM>[Ld];
-      r = myintpow(L,DIM);
       get_multivariate_interp_nodes<DIM,FLT,ITYPE>(L,minsr,maxsr,py);
       get_multivariate_interp_nodes<DIM,FLT,ITYPE>(L,minsl,maxsl,px);
-      get_symbolic_matrix<DIM,FLT,T,KRNL>(px,py,r,r,A,K);
+      get_symbolic_matrix<DIM,FLT,T,KRNL>(px,py,Ld,Ld,A,K);
       get_polynomials<DIM,FLT,T,ITYPE>(L,Sr,minsr,maxsr,prtsr,Nr);
       get_polynomials<DIM,FLT,T,ITYPE>(L,Sl,minsl,maxsl,prtsl,Nl);
-      gesvd_fixed_rank<T>(A,r,UV,rank);
-      rank_of_compressed_matrix = rank;;
+      gesvd_fixed_rank<T>(A,Ld,UV,rank);
+      rank_of_compressed_matrix = rank;
       _SlU = new T[Nl*rank_of_compressed_matrix];
       _VSr = new T[Nr*rank_of_compressed_matrix];
-      gemTm(1.,Sl,UV.U,0.,_SlU,Nl,r,rank_of_compressed_matrix);
-      gemm (1.,UV.V,Sr,0.,_VSr,rank_of_compressed_matrix,r,Nr);
-      rank = rank_of_compressed_matrix;
+      gemTm(1.,Sl,UV.U,0.,_SlU,Nl,Ld,rank_of_compressed_matrix);
+      gemm (1.,UV.V,Sr,0.,_VSr,rank_of_compressed_matrix,Ld,Nr);
       std::free(A);
       std::free(Sl);
       std::free(Sr);
@@ -252,8 +291,8 @@ namespace theia{
   
   template<typename T, typename FLT, int DIM, class KRNL>
   void get_lits_cheb(FLT* minsl_, FLT* maxsl_, std::array<FLT,DIM>* prtsl_, int Nl_,
-		FLT* minsr_, FLT* maxsr_, std::array<FLT,DIM>* prtsr_, int Nr_,
-		int L_, KRNL* K_, double epsilon, T*& _SlU, T*& _VSr, int& rank){
+		     FLT* minsr_, FLT* maxsr_, std::array<FLT,DIM>* prtsr_, int Nr_,
+		     int L_, KRNL* K_, double epsilon, T*& _SlU, T*& _VSr, int& rank){
     lits<T,FLT,DIM,KRNL,0> GL(minsl_,maxsl_,prtsl_,Nl_,
 			      minsr_,maxsr_,prtsr_,Nr_,
 			      L_, K_);
@@ -269,8 +308,6 @@ namespace theia{
 			      L_, K_);
     GL.get_UV(rank, _SlU, _VSr);
   }
-
-
 
 }// THEIA
 #endif
