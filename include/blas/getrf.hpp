@@ -6,13 +6,13 @@
 extern "C"{
   // Inverse of a general matrix
   void sgetrf_(const int*, const int*, BLAS_S*, const int*, int*, int*);
-  void sgetri_(const int*, const BLAS_S*, const int*, const int*, const BLAS_S*, const int*, const int*);
+  void sgetri_(const int*, BLAS_S*, const int*, const int*, BLAS_S*, const int*, int*);
   void dgetrf_(const int*, const int*, BLAS_D*, const int*, int*, int*);
-  void dgetri_(const int*, const BLAS_D*, const int*, const int*, const BLAS_D*, const int*, const int*);
+  void dgetri_(const int*, BLAS_D*, const int*, const int*, BLAS_D*, const int*, int*);
   void cgetrf_(const int*, const int*, BLAS_C*, const int*, int*, int*);
-  void cgetri_(const int*, const BLAS_C*, const int*, const int*, const BLAS_C*, const int*, const int*);
+  void cgetri_(const int*, BLAS_C*, const int*, const int*, BLAS_C*, const int*, int*);
   void zgetrf_(const int*, const int*, BLAS_Z*, const int*, int*, int*);
-  void zgetri_(const int*, const BLAS_Z*, const int*, const int*, const BLAS_Z*, const int*, const int*);
+  void zgetri_(const int*, BLAS_Z*, const int*, const int*, BLAS_Z*, const int*, int*);
 }
 
 namespace theia{    
