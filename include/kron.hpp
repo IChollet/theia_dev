@@ -22,6 +22,7 @@
 #ifndef THEIA_KRON_HPP
 #define THEIA_KRON_HPP
 #include "./matrices.hpp"
+#include "./nkmm.hpp"
 
 namespace theia{
 
@@ -77,20 +78,34 @@ namespace theia{
     T**      matrices;
     int*     Ms;
     int*     Ns;
-    int**    permutations;
+    int**    permutations = nullptr;
+    int**    permutations_transpose = nullptr;
   public :
-   
+
+    Kron(){};
+    
     Kron(T** matrices_, int* Ms_, int* Ns_){
       matrices = matrices_; Ms = Ms_; Ns = Ns_;}
+
+    void set(T** matrices_, int* Ms_, int* Ns_){
+    matrices = matrices_; Ms = Ms_; Ns = Ns_;}
         
     void prcmp(){get_permutations<DIM>(Ms,Ns,permutations);}
     
     friend void gemm(Kron<DIM,T>& A, T* B, T* C, int nrhs){
-      T* tmp0 = new T[nrhs];
-      T* tmp1 = new T[nrhs];
+      if(A.permutations == nullptr){
+	get_permutations<DIM>(A.Ms,A.Ns,A.permutations);}
       int prod_of_sizes = 1;
-      for(int d = 0; d < DIM; d++){prod_of_sizes *= A.Ns[d];}
-      for(int i = 0; i < prod_of_sizes; i++){tmp0[i] = B[i];}
+      int max_prod_of_sizes = 1;
+      for(int d = 0; d < DIM; d++){
+	prod_of_sizes *= A.Ns[d];
+	max_prod_of_sizes *= std::max(A.Ns[d],A.Ms[d]);
+      }
+      T* tmp0 = new T[nrhs*max_prod_of_sizes];
+      T* tmp1 = new T[nrhs*max_prod_of_sizes];
+      for(int i = 0; i < prod_of_sizes; i++){
+	tmp0[i] = B[i];
+      }
       for(int d = 0; d < DIM; d++){
 	prod_of_sizes /= A.Ns[(DIM+d-1)%DIM];
 	theia::gemm(1.,A.matrices[(DIM+d-1)%DIM],tmp0,
@@ -108,7 +123,39 @@ namespace theia{
 	C[i] = tmp0[i];
       }
     }
-    
+
+    friend void gemTm(Kron<DIM,T>& A, T* B, T* C, int nrhs){
+      if(A.permutations_transpose == nullptr){
+	get_permutations<DIM>(A.Ns,A.Ms,A.permutations_transpose);}
+      int prod_of_sizes = 1;
+      int max_prod_of_sizes = 1;
+      for(int d = 0; d < DIM; d++){
+	prod_of_sizes     *= A.Ms[d];
+	max_prod_of_sizes *= std::max(A.Ns[d],A.Ms[d]);
+      }
+      T* tmp0 = new T[nrhs*max_prod_of_sizes];
+      T* tmp1 = new T[nrhs*max_prod_of_sizes];
+      for(int i = 0; i < prod_of_sizes; i++){
+	tmp0[i] = B[i];
+      }
+      for(int d = 0; d < DIM; d++){
+	prod_of_sizes /= A.Ms[(DIM+d-1)%DIM];
+	theia::gemTm(1.,A.matrices[(DIM+d-1)%DIM],tmp0,
+	     0.,tmp1,
+	     A.Ns[(DIM+d-1)%DIM],A.Ms[(DIM+d-1)%DIM],prod_of_sizes*nrhs);
+	prod_of_sizes *= A.Ns[(DIM+d-1)%DIM];
+	int* perm = A.permutations_transpose[d];
+	for(int r = 0; r < nrhs; r++){
+	  for(int i = 0; i < prod_of_sizes; i++){
+	    (tmp0+r*prod_of_sizes)[perm[i]] = tmp1[i];
+	  }
+	}
+      }
+      for(int i = 0; i < prod_of_sizes; i++){
+	C[i] = tmp0[i];
+      }
+    }
+        
   }; // Kron
 
 

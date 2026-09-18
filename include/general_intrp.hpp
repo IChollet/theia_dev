@@ -45,7 +45,7 @@ namespace theia{
   
   template<int DIM, typename FLT, typename T, int ITYPE>
   inline void get_polynomials(int L, T*& S,
-			      FLT* mins, FLT* maxs,
+			      const FLT* mins, const FLT* maxs,
 			      std::array<FLT,DIM>* prts, int N){
     int Ld  = myintpow(L,DIM);
     if(S == nullptr)
@@ -75,6 +75,17 @@ namespace theia{
 	}
       }
     }
+
+    // A RETIRER
+    /*
+    for(int i = 0; i < Ld; i++){
+      for(int j = 0; j < N; j++){
+	std::cout << S[i+j*Ld] << "\t";
+      }
+      std::cout << std::endl;
+    }std::cout << std::endl;
+    */
+    
   }
 
   /*
@@ -85,35 +96,28 @@ namespace theia{
     L     : interpolation order (int)
     A     : P2M matrix (FLT*)
   */
-  template<int DIM, typename T, typename FLT, int ITYPE>
+  template<int DIM, typename FLT, typename T, int ITYPE>
   inline void get_P2M(FLT* mins, FLT* maxs,
 		      int N, std::array<FLT,DIM>* py,
-		      int L, T* A){
+		      int L, T*& A){ 
     get_polynomials<DIM,FLT,T,ITYPE>(L,A,mins,maxs,py,N);
   }
 
-  /*
-  template<int DIM, typename T, typename FLT, int I_TYPE>
+  template<int DIM, typename FLT, typename T, class KRNL, int ITYPE>
   inline void get_M2L(FLT* minsX, FLT* maxsX, int Lx,
 		      FLT* minsY, FLT* maxsY, int Ly,
-		      T* U, T* V, int& rank){
+		      T*& A, KRNL& K){
     int Lxd  = myintpow(Lx,DIM);
     int Lyd  = myintpow(Lx,DIM);
-    A        = new T  [Lxd*Lyd];
+    if(A == nullptr){
+      A      = new T  [Lxd*Lyd];
+    }
     std::array<FLT,DIM> *px = new std::array<FLT,DIM>[Lxd];
     std::array<FLT,DIM> *py = new std::array<FLT,DIM>[Lyd];
-    get_multivariate_interp_nodes<DIM,FLT,ITYPE>(Lx,minsr,maxsr,py);
-    get_multivariate_interp_nodes<DIM,FLT,ITYPE>(Ly,minsl,maxsl,px);
-    get_symbolic_matrix<DIM,FLT,T,KRNL>(px,py,Lxd,Lyd,A,K);
-    lrmat<T> UV;
-    gesvd<T>(A,r,UV,epsilon);
-    rank = UV.r;
-    for(int i = 0; i < Lxd; i++){
-      for(int k = 0; k < rank; k++){
-      }
-    }
+    get_multivariate_interp_nodes<DIM,FLT,ITYPE>(Lx,minsX,maxsX,px);
+    get_multivariate_interp_nodes<DIM,FLT,ITYPE>(Ly,minsY,maxsY,py);
+    K(px,Lxd,py,Lyd,A);
   }
-  */
 
   template<int DIM, typename FLT, int LEFT_TYPE, int RIGHT_TYPE>
   inline void get_M2M(int * left_L, FLT*  left_mins, FLT*  left_maxs,
