@@ -75,17 +75,6 @@ namespace theia{
 	}
       }
     }
-
-    // A RETIRER
-    /*
-    for(int i = 0; i < Ld; i++){
-      for(int j = 0; j < N; j++){
-	std::cout << S[i+j*Ld] << "\t";
-      }
-      std::cout << std::endl;
-    }std::cout << std::endl;
-    */
-    
   }
 
   /*
@@ -119,23 +108,20 @@ namespace theia{
     K(px,Lxd,py,Lyd,A);
   }
 
-  template<int DIM, typename FLT, int LEFT_TYPE, int RIGHT_TYPE>
+  template<int DIM, typename FLT, typename T,
+	   int LEFT_ITYPE, int RIGHT_ITYPE>
   inline void get_M2M(int * left_L, FLT*  left_mins, FLT*  left_maxs,
 		      int *right_L, FLT* right_mins, FLT* right_maxs,
-		      Kron<DIM,FLT>& A){
-    FLT **S  = new FLT*[DIM];
+		      Kron<DIM,T>& A){
+    T **S  = new T*[DIM];
     for(int d = 0; d < DIM; d++){
-      S [d]     = new FLT[left_L[d]*right_L[d]];
-      FLT ctrld = ( left_mins[d] +  left_maxs[d])*0.5;
-      FLT ctrrd = (right_mins[d] + right_maxs[d])*0.5;
-      FLT radld = std::abs( left_mins[d] -  left_maxs[d])*0.5;
-      FLT radrd = std::abs(right_mins[d] - right_maxs[d])*0.5;
-      for(int j = 0; j < right_L[d]; j++){
-	FLT y = (ctrrd + radrd * get_node<RIGHT_TYPE>(j,right_L[d]) - ctrld) / radld;
-        for(int i = 0; i < left_L[d]; i++){
-	  S[d][j*left_L[d]+i] = C1D<LEFT_TYPE>(y,i,left_L[d]);
-	}
-      }
+      S[d] = nullptr;
+      std::array<FLT,1> *px = new std::array<FLT,1>[ left_L[d]];
+      std::array<FLT,1> *py = new std::array<FLT,1>[right_L[d]];
+      get_multivariate_interp_nodes<1,FLT,RIGHT_ITYPE>
+	(right_L[d], right_mins+d, right_maxs+d, py);
+      get_polynomials<1,FLT,T,LEFT_ITYPE>
+	(left_L[d], S[d], left_mins+d, left_maxs+d, py, right_L[d]);
     }
     A.set(S,left_L,right_L);
   }
