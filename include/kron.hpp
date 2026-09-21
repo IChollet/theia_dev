@@ -72,7 +72,7 @@ namespace theia{
     }
   }
   
-  template<int DIM, typename T>
+  template<size_t DIM, typename T>
   class Kron{
   private:
     T**      matrices;

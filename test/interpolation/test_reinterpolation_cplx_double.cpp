@@ -48,8 +48,8 @@ int main(int argc, char* argv[]){
   // Leaf clusters and sampling
   FLT minsX[3]; minsX[0] = 0.;  minsX[1] = 0.; minsX[2] = 0.;
   FLT maxsX[3]; maxsX[0] = 1.;  maxsX[1] = 1.; maxsX[2] = 1.;
-  FLT minsY[3]; minsY[0] = 0.;  minsY[1] = 0.; minsY[2] = 6.;
-  FLT maxsY[3]; maxsY[0] = 1.;  maxsY[1] = 1.; maxsY[2] = 7.;
+  FLT minsY[3]; minsY[0] = 0.2;  minsY[1] = 0.1; minsY[2] = 6.;
+  FLT maxsY[3]; maxsY[0] = 0.9;  maxsY[1] = 1.7; maxsY[2] = 7.;
   for(int i = 0; i < Nx; i++){
     for(int k = 0; k < DIM; k++){
       FLT xx = minsX[k] + urand * (maxsX[k] - minsX[k]);
@@ -70,26 +70,25 @@ int main(int argc, char* argv[]){
   FLT minsYu[3]; minsYu[0] = 0.;  minsYu[1] = 0.; minsYu[2] = 6.;
   FLT maxsYu[3]; maxsYu[0] = 2.;  maxsYu[1] = 2.; maxsYu[2] = 8.;
   
+  // Operator infos
+  const theia::op_interpolation<DIM,FLT,CPLX,0> info;
+  int LL[DIM] = {L,L,L};
+  
   // P2M matrices
   CPLX *P2M_x = nullptr;
-  theia::get_P2M<DIM,FLT,CPLX,0>(minsX, maxsX, Nx, X, L, P2M_x);
   CPLX *P2M_y = nullptr;
-  theia::get_P2M<DIM,FLT,CPLX,0>(minsY, maxsY, Ny, Y, L, P2M_y);
+  theia::P2M(minsX, maxsX, Nx, X, L, P2M_x, info);
+  theia::P2M(minsY, maxsY, Ny, Y, L, P2M_y, info);
 
   // M2M matrices
-  int LL[DIM] = {L,L,L};
   theia::Kron<DIM,CPLX> M2M_x;
-  theia::get_M2M<DIM,FLT,CPLX,0,0>
-    (LL, minsXu, maxsXu, LL, minsX, maxsX, M2M_x);
   theia::Kron<DIM,CPLX> M2M_y;
-  theia::get_M2M<DIM,FLT,CPLX,0,0>
-    (LL, minsYu, maxsYu, LL, minsY, maxsY, M2M_y);
+  theia::M2M(LL, minsXu, maxsXu, LL, minsX, maxsX, M2M_x, info);
+  theia::M2M(LL, minsYu, maxsYu, LL, minsY, maxsY, M2M_y, info);
   
   // M2L matrices
   CPLX *M2L = nullptr;
-  theia::get_M2L<DIM,FLT,CPLX,light,0>(minsXu, maxsXu, L,
-				       minsYu, maxsYu, L,
-				       M2L   , Kernel);
+  theia::M2L(minsXu, maxsXu, L, minsYu, maxsYu, L, Kernel, M2L, info);
 
   // Apply matrices
   int Ld = theia::myintpow(L,DIM);

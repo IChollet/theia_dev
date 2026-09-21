@@ -63,17 +63,16 @@ int main(int argc, char* argv[]){
     q[i] = urand;
   }
   
-  // P2M matrices
-  FLT *P2M_x = nullptr;
-  theia::get_P2M<DIM,FLT,FLT,0>(minsX, maxsX, Nx, X, L, P2M_x);
-  FLT *P2M_y = nullptr;
-  theia::get_P2M<DIM,FLT,FLT,0>(minsY, maxsY, Ny, Y, L, P2M_y);
+  // Operator infos
+  const theia::op_interpolation<DIM,FLT,FLT,0> info;
   
-  // M2L matrices
-  FLT *M2L = nullptr;
-  theia::get_M2L<DIM,FLT,FLT,light,0>(minsX, maxsX, L,
-				      minsY, maxsY, L,
-				      M2L  , Kernel);
+  // Operator matrices
+  FLT *P2M_x = nullptr;
+  FLT *P2M_y = nullptr;
+  FLT *M2L   = nullptr;
+  theia::P2M(minsX, maxsX, Nx, X, L, P2M_x, info);
+  theia::P2M(minsY, maxsY, Ny, Y, L, P2M_y, info);
+  theia::M2L(minsX, maxsX, L, minsY, maxsY, L, Kernel, M2L, info);
 
   // Apply matrices
   int Ld = theia::myintpow(L,DIM);

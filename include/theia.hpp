@@ -23,5 +23,6 @@
 #define THEIA_MAIN_HEADER
 
 #include "general_intrp.hpp"
+#include "operators/operators.hpp"
 
 #endif

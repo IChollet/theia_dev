@@ -66,18 +66,17 @@ int main(int argc, char* argv[]){
     q[i] = CPLX(urand);
   }
   
-  // P2M matrices
+  // Operator infos
+  const theia::op_interpolation<DIM,FLT,CPLX,0> info;
+  
+  // Operator matrices
   CPLX *P2M_x = nullptr;
-  theia::get_P2M<DIM,FLT,CPLX,0>(minsX, maxsX, Nx, X, L, P2M_x);
   CPLX *P2M_y = nullptr;
-  theia::get_P2M<DIM,FLT,CPLX,0>(minsY, maxsY, Ny, Y, L, P2M_y);
-  
-  // M2L matrices
-  CPLX *M2L = nullptr;
-  theia::get_M2L<DIM,FLT,CPLX,light,0>(minsX, maxsX, L,
-				      minsY, maxsY, L,
-				       M2L  , Kernel);
-  
+  CPLX *M2L   = nullptr;
+  theia::P2M(minsX, maxsX, Nx, X, L, P2M_x, info);
+  theia::P2M(minsY, maxsY, Ny, Y, L, P2M_y, info);
+  theia::M2L(minsX, maxsX, L, minsY, maxsY, L, Kernel, M2L, info);
+
   // Apply matrices
   int Ld = theia::myintpow(L,DIM);
   CPLX *tmp0 = new CPLX[Ld];

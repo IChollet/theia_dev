@@ -77,55 +77,6 @@ namespace theia{
     }
   }
 
-  /*
-    mins  : min bounds of cell (FLT*)
-    maxs  : max bounds of cell (FLT*)
-    N     : number of particles (int)
-    py    : particle array (std::array<FLT,DIM>*)
-    L     : interpolation order (int)
-    A     : P2M matrix (FLT*)
-  */
-  template<int DIM, typename FLT, typename T, int ITYPE>
-  inline void get_P2M(FLT* mins, FLT* maxs,
-		      int N, std::array<FLT,DIM>* py,
-		      int L, T*& A){ 
-    get_polynomials<DIM,FLT,T,ITYPE>(L,A,mins,maxs,py,N);
-  }
-
-  template<int DIM, typename FLT, typename T, class KRNL, int ITYPE>
-  inline void get_M2L(FLT* minsX, FLT* maxsX, int Lx,
-		      FLT* minsY, FLT* maxsY, int Ly,
-		      T*& A, KRNL& K){
-    int Lxd  = myintpow(Lx,DIM);
-    int Lyd  = myintpow(Lx,DIM);
-    if(A == nullptr){
-      A      = new T  [Lxd*Lyd];
-    }
-    std::array<FLT,DIM> *px = new std::array<FLT,DIM>[Lxd];
-    std::array<FLT,DIM> *py = new std::array<FLT,DIM>[Lyd];
-    get_multivariate_interp_nodes<DIM,FLT,ITYPE>(Lx,minsX,maxsX,px);
-    get_multivariate_interp_nodes<DIM,FLT,ITYPE>(Ly,minsY,maxsY,py);
-    K(px,Lxd,py,Lyd,A);
-  }
-
-  template<int DIM, typename FLT, typename T,
-	   int LEFT_ITYPE, int RIGHT_ITYPE>
-  inline void get_M2M(int * left_L, FLT*  left_mins, FLT*  left_maxs,
-		      int *right_L, FLT* right_mins, FLT* right_maxs,
-		      Kron<DIM,T>& A){
-    T **S  = new T*[DIM];
-    for(int d = 0; d < DIM; d++){
-      S[d] = nullptr;
-      std::array<FLT,1> *px = new std::array<FLT,1>[ left_L[d]];
-      std::array<FLT,1> *py = new std::array<FLT,1>[right_L[d]];
-      get_multivariate_interp_nodes<1,FLT,RIGHT_ITYPE>
-	(right_L[d], right_mins+d, right_maxs+d, py);
-      get_polynomials<1,FLT,T,LEFT_ITYPE>
-	(left_L[d], S[d], left_mins+d, left_maxs+d, py, right_L[d]);
-    }
-    A.set(S,left_L,right_L);
-  }
-
   // AJOUTER une fonction qui prend en argument une liste de cellules filles et une cellule mère, et qui calcule la matrice de réinterpolation sur la mère (structure de liste de prod de kron)
   
   // Templates :
@@ -139,7 +90,7 @@ namespace theia{
     
     T*      Sl = nullptr;             // Left    polynomials
     T*      Sr = nullptr;             // Right   polynomials
-    T*      A = nullptr;              // Central symbolic matrix
+    T*      A  = nullptr;             // Central symbolic matrix
     int     L;                        // Interpolation order
     FLT*    minsl;                    // Left    lower interval bounds
     FLT*    maxsl;                    // Left    maximal interval bounds
