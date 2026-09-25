@@ -1,64 +1,29 @@
-#!/bin/bash                                                                                                                                                                                                   
-COMPILO = /usr/bin/g++ -O3 -ffast-math -mfma -fno-trapping-math -march=native -mtune=native -mavx -std=c++11 -mprefer-vector-width=512 -fopenmp -lpthread -std=c++17 # -fopenacc # -fopenmp-simd 
-DEBUG   = #-g -fopt-info-optall -fverbose-asm -Wall                                                                                                                                                          
-INCLUDE = -lm -lpthread -lblas -llapack -lfftw3 
+CXX      = g++
+CXXFLAGS = -O3 -march=native -mtune=native -std=c++17 -fopenmp
+DEBUG    = # -g -Wall -Wextra
+LDLIBS   = -llapack -lblas -lm -lpthread
+DEPFLAGS = -MMD -MP
 
-interp_light : interp_light.o makefile
-	$(COMPILO) $(DEBUG) interp_light.o -o interp_light $(INCLUDE)
+# Sanitized build: make asan (or: make SAN=1 <target>)
+ifdef SAN
+CXXFLAGS = -O1 -g -std=c++17 -fsanitize=address,undefined -fno-omit-frame-pointer
+endif
 
-interp_light.o: interp_light.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c interp_light.cpp -o interp_light.o
+SRCS = $(wildcard */test_*.cpp)
+BINS = $(SRCS:.cpp=)
 
-inverse : inverse.o makefile
-	$(COMPILO) $(DEBUG) inverse.o -o inverse $(INCLUDE)
+.PHONY: all asan clean
+all: $(BINS)
 
-inverse.o: inverse.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c inverse.cpp -o inverse.o
+asan:
+	$(MAKE) clean
+	$(MAKE) SAN=1 all
 
-shape : shape.o makefile
-	$(COMPILO) $(DEBUG) shape.o -o shape $(INCLUDE)
+# Any test binary is built from its .cpp; header dependencies are tracked in .d files
+%: %.cpp
+	$(CXX) $(CXXFLAGS) $(DEBUG) $(DEPFLAGS) $< -o $@ $(LDLIBS)
 
-shape.o: shape.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c shape.cpp -o shape.o
+clean:
+	rm -f $(BINS) $(BINS:=.d)
 
-sketching : sketching.o makefile
-	$(COMPILO) $(DEBUG) sketching.o -o sketching $(INCLUDE)
-
-sketching.o: sketching.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c sketching.cpp -o sketching.o
-
-reinterpolation_test : reinterpolation_test.o makefile
-	$(COMPILO) $(DEBUG) reinterpolation_test.o -o reinterpolation_test $(INCLUDE)
-
-reinterpolation_test.o: reinterpolation_test.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c reinterpolation_test.cpp -o reinterpolation_test.o
-
-test_svd : test_svd.o makefile
-	$(COMPILO) $(DEBUG) test_svd.o -o test_svd $(INCLUDE)
-
-test_svd.o: test_svd.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c test_svd.cpp -o test_svd.o
-
-test_gauss_hermite : test_gauss_hermite.o makefile
-	$(COMPILO) $(DEBUG) test_gauss_hermite.o -o test_gauss_hermite $(INCLUDE)
-
-test_gauss_hermite.o: test_gauss_hermite.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c test_gauss_hermite.cpp -o test_gauss_hermite.o
-
-test_gauss_laguerre : test_gauss_laguerre.o makefile
-	$(COMPILO) $(DEBUG) test_gauss_laguerre.o -o test_gauss_laguerre $(INCLUDE)
-
-test_gauss_laguerre.o: test_gauss_laguerre.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c test_gauss_laguerre.cpp -o test_gauss_laguerre.o
-
-test_gauss_legendre : test_gauss_legendre.o makefile
-	$(COMPILO) $(DEBUG) test_gauss_legendre.o -o test_gauss_legendre $(INCLUDE)
-
-test_gauss_legendre.o: test_gauss_legendre.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c test_gauss_legendre.cpp -o test_gauss_legendre.o
-
-test_cauchy : test_cauchy.o makefile
-	$(COMPILO) $(DEBUG) test_cauchy.o -o test_cauchy $(INCLUDE)
-
-test_cauchy.o: test_cauchy.cpp  ../include/*.hpp
-	$(COMPILO) $(DEBUG) $(INCLUDE) -c test_cauchy.cpp -o test_cauchy.o
+-include $(BINS:=.d)

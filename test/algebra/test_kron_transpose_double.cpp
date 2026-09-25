@@ -18,9 +18,9 @@ int main(){
 
   // Initialise (randomly) the matrices
   FLT** A = new FLT*[DIM];
-  FLT * q = new FLT[NN];
-  FLT * r = new FLT[MM];
-  FLT * e = new FLT[MM];
+  FLT * q = new FLT[MM];
+  FLT * r = new FLT[NN];
+  FLT * e = new FLT[NN];
   for(int i = 0; i < DIM; i++){
     A[i] = new FLT[M[i]*N[i]];
     for(int ii = 0; ii < M[i]; ii++){
@@ -29,22 +29,22 @@ int main(){
       }
     }
   }
-  for(int i = 0; i < NN; i++){q[i] = FLT(urand);}
-  for(int i = 0; i < MM; i++){r[i] = FLT(urand);}
+  for(int i = 0; i < MM; i++){q[i] = FLT(urand);}
+  for(int i = 0; i < NN; i++){r[i] = FLT(urand);}
 
   // Get Kronecker struct
   theia::Kron<DIM,FLT> K(A,M,N);
   
   // Kronecker struct product
-  gemm(K,q,r,1);
+  gemTm(K,q,r,1);
   
   // Get naive product
-  theia::nkmv(A, M, N, q, e, DIM);
+  theia::nkmTv(A, M, N, q, e, DIM);
 
   // Verify result
   double num = 0.;
   double div = 0.;
-  for(int i = 0; i < MM; i++){
+  for(int i = 0; i < NN; i++){
     num += std::abs(e[i]-r[i]);
     div += std::abs(e[i]);
   }

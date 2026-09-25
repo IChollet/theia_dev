@@ -28,23 +28,23 @@
 #define BLAS_D double
 #define BLAS_C std::complex<float>
 #define BLAS_Z std::complex<double>
-BLAS_S S_ZERO     =  0.0;
-BLAS_S S_ONE      =  1.0;
-BLAS_S S_MONE     = -1.0;
-BLAS_D D_ZERO     =  0.0;
-BLAS_D D_ONE      =  1.0;
-BLAS_D D_MONE     = -1.0;
-BLAS_C C_ZERO     =  0.0;
-BLAS_C C_ONE      =  1.0;
-BLAS_C C_MONE     = -1.0;
-BLAS_Z Z_ZERO     =  0.0;
-BLAS_Z Z_ONE      =  1.0;
-BLAS_Z Z_MONE     = -1.0;
-int    IN_ONE     =  1  ;
-const char* charN = "N" ;
-const char* charT = "T" ;
-const char* charC = "C" ;
-const char* charS = "S" ;
-const char* charA = "A" ;
+constexpr BLAS_S S_ZERO     =  0.0;
+constexpr BLAS_S S_ONE      =  1.0;
+constexpr BLAS_S S_MONE     = -1.0;
+constexpr BLAS_D D_ZERO     =  0.0;
+constexpr BLAS_D D_ONE      =  1.0;
+constexpr BLAS_D D_MONE     = -1.0;
+constexpr BLAS_C C_ZERO     =  0.0;
+constexpr BLAS_C C_ONE      =  1.0;
+constexpr BLAS_C C_MONE     = -1.0;
+constexpr BLAS_Z Z_ZERO     =  0.0;
+constexpr BLAS_Z Z_ONE      =  1.0;
+constexpr BLAS_Z Z_MONE     = -1.0;
+constexpr int IN_ONE     =  1  ;
+constexpr const char* charN = "N" ;
+constexpr const char* charT = "T" ;
+constexpr const char* charC = "C" ;
+constexpr const char* charS = "S" ;
+constexpr const char* charA = "A" ;
 
 #endif

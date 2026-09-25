@@ -64,12 +64,19 @@ namespace theia{
 	      << std::endl;
     return 0.;
   }
+  // S_k(x) = 1/L + 2/L sum_{j=1}^{L-1} T_j(x) T_j(r_k), with T_j(x) and T_j(r_k)
+  // both obtained by the three-term recurrence T_{j+1} = 2 u T_j - T_{j-1}
+  // (no acos, hence no NaN if x leaves [-1,1] by rounding)
   template<> inline double C1D<0>(const double& x, int k, int L){
-    double* Tx = new double[L]; getTs(x,L,Tx);
-    double* Tr = new double[L]; getTr(k,L,Tr);
-    double res = 1.;
+    double r    = get_node<0>(k,L);
+    double Tx0  = 1., Tx1 = x;
+    double Tr0  = 1., Tr1 = r;
+    double res  = 1.;
     for(int j = 1; j < L; j++){
-      res += 2. * Tx[j] * Tr[j];}
+      res += 2. * Tx1 * Tr1;
+      double Tx2 = 2.*x*Tx1 - Tx0; Tx0 = Tx1; Tx1 = Tx2;
+      double Tr2 = 2.*r*Tr1 - Tr0; Tr0 = Tr1; Tr1 = Tr2;
+    }
     return res/(double)(L);
   }
   template<> inline double C1D<1>(const double& x, int k, int L){

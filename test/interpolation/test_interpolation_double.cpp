@@ -66,14 +66,15 @@ int main(int argc, char* argv[]){
 
   // Operator infos
   const theia::op_interpolation<DIM,FLT,FLT,0> info;
+  int LL[DIM] = {L,L,L};
   
   // Operator matrices
   FLT *P2M_x = nullptr;
   FLT *P2M_y = nullptr;
   FLT *M2L   = nullptr;
-  theia::P2M(minsX, maxsX, Nx, X, L, P2M_x, info);
-  theia::P2M(minsY, maxsY, Ny, Y, L, P2M_y, info);
-  theia::M2L(minsX, maxsX, L, minsY, maxsY, L, Kernel, M2L, info);
+  theia::P2M(minsX, maxsX, Nx, X, LL, P2M_x, info);
+  theia::P2M(minsY, maxsY, Ny, Y, LL, P2M_y, info);
+  theia::M2L(minsX, maxsX, LL, minsY, maxsY, LL, Kernel, M2L, info);
 
   // Apply matrices
   int Ld = theia::myintpow(L,DIM);

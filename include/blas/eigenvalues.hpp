@@ -14,6 +14,19 @@ extern "C"{
   void dstevr_(const char* jobz, const char* range, const int* n, double* d, double* e, const double* vl, const double* vu, const int* il, const int* iu, const double* abstol, int* m, double* w, double* z, const int* ldz, int* isuppz, double* work, const int* lwork, int* iwork, const int* liwork, int* info);
   void sstevr_(const char* jobz, const char* range, const int* n, float* d, float* e, const float* vl, const float* vu, const int* il, const int* iu, const float* abstol, int* m, float* w, float* z, const int* ldz, int* isuppz, float* work, const int* lwork, int* iwork, const int* liwork, int* info);
 
+  // Valeurs propres d'une matrice generale complexe
+  void cgeev_(const char* jobvl, const char* jobvr, const int* n,
+	      std::complex<float>* a, const int* lda,
+	      std::complex<float>* w, std::complex<float>* vl,
+	      const int* ldvl, std::complex<float>* vr,
+	      const int* ldvr, std::complex<float>* work,
+	      const int* lwork, float* rwork, int* info);
+  void zgeev_(const char* jobvl, const char* jobvr, const int* n,
+	      std::complex<double>* a, const int* lda,
+	      std::complex<double>* w, std::complex<double>* vl,
+	      const int* ldvl, std::complex<double>* vr,
+	      const int* ldvr, std::complex<double>* work,
+	      const int* lwork, double* rwork, int* info);
 }
 
 namespace theia{
@@ -78,6 +91,36 @@ namespace theia{
     zheev_(&jobz,&uplo,&n,a,&lda,w,work.data(),&lwork,rwork.data(),&info);
     if(info != 0) throw std::runtime_error("LAPACK csyev failed");
   }
+
+  // Valeurs propres matrice carrée complexe (pas les vecteurs propres)
+  template <typename FLT>
+  void eigenvalues(std::complex<FLT>* A, int n,
+		   std::vector<std::complex<FLT>>& W) {
+    W.assign(static_cast<std::size_t>(n), std::complex<FLT>(0));
+    char jobvl = 'N', jobvr = 'N';
+    int lda = n, ldvl = 1, ldvr = 1, info = 0, lwork = -1;
+    std::vector<FLT> rwork(static_cast<std::size_t>(std::max(int(1), 2 * n)));
+    std::complex<FLT> work_query{};
+    auto call = [&](std::complex<FLT>* work_ptr, int lwork_val) {
+      if constexpr (std::is_same_v<FLT, float>) {
+	cgeev_(&jobvl, &jobvr, &n, A, &lda, W.data(), nullptr,
+	       &ldvl, nullptr, &ldvr, work_ptr, &lwork_val,
+	       rwork.data(), &info);
+      }else{
+	zgeev_(&jobvl, &jobvr, &n, A, &lda, W.data(), nullptr,
+	       &ldvl, nullptr, &ldvr, work_ptr, &lwork_val,
+	       rwork.data(), &info);
+      }
+    };
+    call(&work_query, -1);
+    lwork = static_cast<int>(work_query.real());
+    std::vector<std::complex<FLT>> work(static_cast<std::size_t>(std::max(int(1), lwork)));
+    call(work.data(), lwork);
+    if (info != 0)
+      throw std::runtime_error("eigenvalues: ?geev info=" +
+			       std::to_string(static_cast<long long>(info)));
+  }
+
 } // THEIA
 
 #endif

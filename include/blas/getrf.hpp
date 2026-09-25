@@ -16,13 +16,13 @@ extern "C"{
 }
 
 namespace theia{    
-  void getrf(int m, int n, float* A, int lda, int* ipiv){
+  inline void getrf(int m, int n, float* A, int lda, int* ipiv){
     int info;
     sgetrf_(&m, &n, A, &lda, ipiv, &info);
     if(info < 0){std::cout << "sgetrf: invalid argument"  << std::endl;}
     if(info > 0){std::cout << "sgetrf: singular matrix " << std::endl;}
   }
-  void getri(int n, float* A, int lda, int* ipiv){
+  inline void getri(int n, float* A, int lda, int* ipiv){
     int info;
     int lwork = -1;
     float work_query;
@@ -36,13 +36,13 @@ namespace theia{
     if(info > 0){std::cout << "sgetri: singular matrix " << std::endl;
     }
   }
-  void getrf(int m, int n, double* A, int lda, int* ipiv){
+  inline void getrf(int m, int n, double* A, int lda, int* ipiv){
     int info;
     dgetrf_(&m, &n, A, &lda, ipiv, &info);
     if(info < 0){std::cout << "sgetrf: invalid argument"  << std::endl;}
     if(info > 0){std::cout << "sgetrf: singular matrix " << std::endl;}
   }
-  void getri(int n, double* A, int lda, int* ipiv){
+  inline void getri(int n, double* A, int lda, int* ipiv){
     int info;
     int lwork = -1;
     double work_query;
@@ -56,13 +56,13 @@ namespace theia{
     if(info > 0){std::cout << "sgetri: singular matrix " << std::endl;
     }
   }
-  void getrf(int m, int n, std::complex<float>* A, int lda, int* ipiv){
+  inline void getrf(int m, int n, std::complex<float>* A, int lda, int* ipiv){
     int info;
     cgetrf_(&m, &n, A, &lda, ipiv, &info);
     if(info < 0){std::cout << "sgetrf: invalid argument"  << std::endl;}
     if(info > 0){std::cout << "sgetrf: singular matrix " << std::endl;}
   }
-  void getri(int n, std::complex<float>* A, int lda, int* ipiv){
+  inline void getri(int n, std::complex<float>* A, int lda, int* ipiv){
     int info;
     int lwork = -1;
     std::complex<float> work_query;
@@ -76,13 +76,13 @@ namespace theia{
     if(info > 0){std::cout << "sgetri: singular matrix " << std::endl;
     }
   }
-  void getrf(int m, int n, std::complex<double>* A, int lda, int* ipiv){
+  inline void getrf(int m, int n, std::complex<double>* A, int lda, int* ipiv){
     int info;
     zgetrf_(&m, &n, A, &lda, ipiv, &info);
     if(info < 0){std::cout << "sgetrf: invalid argument"  << std::endl;}
     if(info > 0){std::cout << "sgetrf: singular matrix " << std::endl;}
   }
-  void getri(int n, std::complex<double>* A, int lda, int* ipiv){
+  inline void getri(int n, std::complex<double>* A, int lda, int* ipiv){
     int info;
     int lwork = -1;
     std::complex<double> work_query;

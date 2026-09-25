@@ -37,10 +37,9 @@ namespace theia{
 	// Computations
 	FLT dtheta = 2.*M_PI / FLT(number_of_quadrature_points);
 	FLT w      = 1.      / FLT(number_of_quadrature_points);
-	FLT cpi    = -M_PI*0.25;
 	for(int i = 0; i < number_of_quadrature_points; i++){
 	  FLT theta = FLT(i) * dtheta;
-	  std::complex<FLT> e             = radius*std::exp(std::complex<FLT>(0.,cpi+theta));
+	  std::complex<FLT> e             = radius*std::exp(std::complex<FLT>(0.,theta));
 	  std::complex<FLT> z_theta       = center+e;
 	  std::complex<FLT> z_theta_prime = e;
 	  result.w[i]    =  w * z_theta_prime;
@@ -48,6 +47,29 @@ namespace theia{
 	}
 
 	// Output
+	return result;
+      }
+
+      /*
+	Cauchy rule for a given point: the factor 1/(z_i - point) is included
+	in the weights, so that the generic eval(rule, f, res) gives
+	   (1/2 i pi) \oint f(z)/(z - point) dz   ( = f(point) if point is inside the circle,
+	                                           0        if it is outside )
+	Being a standard rule, it can be tensorised with any other rule
+	(e.g. one Cauchy rule per dimension, each with its own point).
+      */
+      template<class FLT>
+      rule_type<FLT> get(int                      number_of_quadrature_points,
+			 const std::complex<FLT>& center,
+			 const std::complex<FLT>& radius,
+			 const std::complex<FLT>& point){
+	rule_type<FLT> result = get<FLT>(number_of_quadrature_points, center, radius);
+	for(int i = 0; i < result.N; i++){
+	  std::complex<FLT> d = result.x[i][0] - point;
+	  if(d == std::complex<FLT>(0.)){
+	    std::cout << "point lies on a node of the cauchy rule" << std::endl; exit(1);}
+	  result.w[i] /= d;
+	}
 	return result;
       }
 

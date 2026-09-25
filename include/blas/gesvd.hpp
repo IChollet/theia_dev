@@ -68,8 +68,43 @@ namespace theia{
     delete [] rwk; delete [] wk;
   }
 
+  // Full SVD complex rectangular matrix
+  template <typename FLT>
+  void svd(std::complex<FLT>* A, int m, int n,
+	   std::vector<std::complex<FLT>>& U, std::vector<FLT>& S,
+	   std::vector<std::complex<FLT>>& VT) {
+    int lda = m, ldu = m, ldvt = n;
+    int minmn = std::min(m, n);
+    S.assign(static_cast<std::size_t>(minmn), FLT(0));
+    U.assign(static_cast<std::size_t>(m) * static_cast<std::size_t>(m),
+             std::complex<FLT>(0));
+    VT.assign(static_cast<std::size_t>(n) * static_cast<std::size_t>(n),
+              std::complex<FLT>(0));
+    std::vector<FLT> rwork(static_cast<std::size_t>(std::max(int(1), 5 * minmn)));
+    char jobu = 'A', jobvt = 'A';
+    int info = 0, lwork = -1;
+    std::complex<FLT> work_query{};
+    auto call = [&](std::complex<FLT>* work_ptr, int lwork_val) {
+      if constexpr (std::is_same_v<FLT, float>) {
+	cgesvd_(&jobu, &jobvt, &m, &n, A, &lda, S.data(),
+		U.data(), &ldu, VT.data(), &ldvt, work_ptr,
+		&lwork_val, rwork.data(), &info);
+      }else{
+	zgesvd_(&jobu, &jobvt, &m, &n, A, &lda, S.data(),
+		U.data(), &ldu, VT.data(), &ldvt, work_ptr,
+		&lwork_val, rwork.data(), &info);
+      }
+    };
+    call(&work_query, -1);
+    lwork = static_cast<int>(work_query.real());
+    std::vector<std::complex<FLT>> work(static_cast<std::size_t>(std::max(int(1), lwork)));
+    call(work.data(), lwork);
+    if (info != 0)
+      throw std::runtime_error("svd: ?gesvd info=" + std::to_string(static_cast<long long>(info)));
+  }
+
   
-  // Only for square matrices
+  // Only for square matrices, truncated svd
   template<typename FLT>
   inline void gesvd(FLT *A, int NbRowAndCol, lrmat<FLT>& lowrank, double& epsilon){
     FLT *S = new FLT[NbRowAndCol];
@@ -96,6 +131,9 @@ namespace theia{
 	lowrank.V[i + j*lowrank.r] = S[i] * V[i + j*NbRowAndCol];
       }
     }
+    delete [] S;
+    delete [] U;
+    delete [] V;
   }
 
   template<typename FLT>
@@ -124,6 +162,9 @@ namespace theia{
 	lowrank.V[i + j*lowrank.r] = S[i] * V[i + j*NbRowAndCol];
       }
     }
+    delete [] S;
+    delete [] U;
+    delete [] V;
   }
   template<>
   inline void gesvd<std::complex<float > >(std::complex<float> *A, int NbRowAndCol, lrmat<std::complex<float> >& lowrank, double& epsilon){
@@ -154,8 +195,8 @@ namespace theia{
     }
     // Get SVD in buffers
     int max_rank = std::min(M,N);
-    FLT *S = new T  [max_rank];
-    T   *U = new FLT[M*max_rank];
+    FLT *S = new FLT[max_rank];
+    T   *U = new T  [M*max_rank];
     T   *V = new T  [N*max_rank];
     gesvd(_A,U,S,V,M,N);
     // Copy result in outputs
@@ -210,6 +251,9 @@ namespace theia{
 	lowrank.V[i + j*lowrank.r] = S[i] * V[i + j*NbRowAndCol];
       }
     }
+    delete [] S;
+    delete [] U;
+    delete [] V;
   }
 
   template<typename FLT>
@@ -233,6 +277,9 @@ namespace theia{
 	lowrank.V[i + j*lowrank.r] = S[i] * V[i + j*NbRowAndCol];
       }
     }
+    delete [] S;
+    delete [] U;
+    delete [] V;
   }
   template<>
   inline void gesvd_fixed_rank<std::complex<float > >(std::complex<float> *A, int NbRowAndCol, lrmat<std::complex<float> >& lowrank, int rank){

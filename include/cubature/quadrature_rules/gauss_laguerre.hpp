@@ -15,7 +15,37 @@ namespace theia{
     namespace gauss_laguerre{
 
       template<typename FLT> using rule_type = rule<FLT,1,FLT,FLT>;
-      
+
+      /*
+	Laguerre polynomials (orthonormal for the weight e^{-x}):
+	  L_0 = 1,  (k+1) L_{k+1} = (2k+1-x) L_k - k L_{k-1},   x L_n' = n (L_n - L_{n-1})
+	Returns L_n(x), L_{n-1}(x) and sum_{k<n} L_k(x)^2 (Christoffel function).
+	Computed in long double: the values grow like e^{x/2} in the tails.
+      */
+      inline void laguerre(long double x, int n,
+			   long double& ln, long double& ln1, long double& sum2){
+	long double l0 = 1.L, l1 = 0.L;
+	sum2 = 0.L;
+	for(int k = 0; k < n; k++){
+	  sum2 += l0*l0;
+	  long double l2 = ((2.L*k+1.L-x) * l0 - (long double)k * l1) / (k+1);
+	  l1 = l0; l0 = l2;
+	}
+	ln = l0; ln1 = l1;
+      }
+
+      // Newton iterations on L_n from an initial guess x (a few steps at most)
+      inline long double refine_node(long double x, int n){
+	for(int it = 0; it < 3; it++){
+	  long double ln, ln1, sum2;
+	  laguerre(x, n, ln, ln1, sum2);
+	  long double dx = ln * x / (n * (ln - ln1));
+	  x -= dx;
+	  if(std::abs(dx) <= 1.e-18L * std::max(1.L, std::abs(x))){break;}
+	}
+	return x;
+      }
+
       template<class FLT> rule_type<FLT> get(int order){
 	// Check template value and args
 	static_assert(std::is_same_v<FLT,float> || std::is_same_v<FLT,double>,
@@ -32,7 +62,7 @@ namespace theia{
 	for (int i = 0; i < order - 1; i++) e[i] = FLT(i + 1);
 	std::vector<FLT> eigvals(order);
 	std::vector<FLT> eigvecs(order * order);
-	constexpr char JOBZ  = 'V';
+	constexpr char JOBZ  = 'N'; // eigenvalues only: weights are computed below
 	constexpr char RANGE = 'A';
 	int m      = 0;
 	int ldz    = order;
@@ -72,9 +102,15 @@ namespace theia{
 	result.x.resize(order);
 	for(int i = 0; i < order; i++){result.x[i][0] = eigvals[i];}
 	result.w.resize(order);
+	// Golub-Welsch nodes refined by Newton; weights from the Christoffel function
+	// w_i = 1 / sum_{k<n} L_k(x_i)^2, accurate in relative precision (even for
+	// tiny tail weights)
 	for (int i = 0; i < order; i++){
-	  const FLT v0 = eigvecs[i*order];
-	  result.w[i] = v0 * v0;
+	  long double x = refine_node(result.x[i][0], order);
+	  long double ln, ln1, sum2;
+	  laguerre(x, order, ln, ln1, sum2);
+	  result.x[i][0] = FLT(x);
+	  result.w[i]    = FLT(1.L / sum2);
 	}
 	return result;
       }

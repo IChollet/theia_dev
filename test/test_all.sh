@@ -1,7 +1,7 @@
 #!/bin/bash
 
 expected=true
-for dir in interpolation algebra cubature ; do
+for dir in interpolation algebra cubature algorithms ; do
     echo -e "\033[0;1;35mExplore $dir\033[0m"
     for file in ./"$dir"/test_*.cpp ; do
 	name=$(basename "$file" .cpp)

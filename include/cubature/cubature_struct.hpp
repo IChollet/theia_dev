@@ -49,25 +49,49 @@ namespace theia{
       res = OUT_t(0.);
       for(int i = 0; i < r.N; i++){
 	res += r.w[i] * f(r.x[i]);
-	std::cout << "\t" << r.w[i] << "\t" << f(r.x[i]) << "\t" << res << std::endl;
       }
     }
 
-    template<typename FLT, int DIM_1, int DIM_2, typename NODE_t, typename WGHT_t>
-    static rule<FLT,DIM_1+DIM_2,NODE_t,WGHT_t> tensor_rule(const rule<FLT,DIM_1,NODE_t,WGHT_t>& r1,
-						    const rule<FLT,DIM_2,NODE_t,WGHT_t>& r2){
-      rule<FLT,DIM_1+DIM_2,NODE_t,WGHT_t> tensor_rule;
-      tensor_rule.N = r1.N*r1.N;
-      tensor_rule.x.resize  (tensor_rule.N);
+    /*
+      Type promotion used to tensorise rules of different types:
+        real    x real    -> common real type
+        complex x any     -> complex of the common precision
+    */
+    template<typename A, typename B> struct promote{
+      using type = std::common_type_t<A,B>;};
+    template<typename A, typename B> struct promote<std::complex<A>,B>{
+      using type = std::complex<std::common_type_t<A,B>>;};
+    template<typename A, typename B> struct promote<A,std::complex<B>>{
+      using type = std::complex<std::common_type_t<A,B>>;};
+    template<typename A, typename B> struct promote<std::complex<A>,std::complex<B>>{
+      using type = std::complex<std::common_type_t<A,B>>;};
+    template<typename A, typename B> using promote_t = typename promote<A,B>::type;
+
+    /*
+      Tensor product of two rules (nodes of r1 first, r2 running fastest).
+      Rules may have different precisions / node types / weight types:
+      the result uses the promoted types (e.g. real x complex -> complex).
+    */
+    template<typename FLT_1, int DIM_1, typename NODE_1, typename WGHT_1,
+	     typename FLT_2, int DIM_2, typename NODE_2, typename WGHT_2>
+    rule<std::common_type_t<FLT_1,FLT_2>, DIM_1+DIM_2,
+	 promote_t<NODE_1,NODE_2>, promote_t<WGHT_1,WGHT_2>>
+    tensor_rule(const rule<FLT_1,DIM_1,NODE_1,WGHT_1>& r1,
+		const rule<FLT_2,DIM_2,NODE_2,WGHT_2>& r2){
+      using NODE_t = promote_t<NODE_1,NODE_2>;
+      using WGHT_t = promote_t<WGHT_1,WGHT_2>;
+      rule<std::common_type_t<FLT_1,FLT_2>,DIM_1+DIM_2,NODE_t,WGHT_t> tensor_rule;
+      tensor_rule.N = r1.N*r2.N;
+      tensor_rule.x.resize(tensor_rule.N);
       tensor_rule.w.resize(tensor_rule.N);
       for(int i = 0; i < r1.N; i++){
 	for(int j = 0; j < r2.N; j++){
-	  tensor_rule.w[i*r2.N+j] = r1.w[i]*r2.w[j];
+	  tensor_rule.w[i*r2.N+j] = WGHT_t(r1.w[i])*WGHT_t(r2.w[j]);
 	  for(int k = 0; k < DIM_1; k++){
-	    tensor_rule.x[i*r2.N+j][      k] = r1.x[i][k];
+	    tensor_rule.x[i*r2.N+j][      k] = NODE_t(r1.x[i][k]);
 	  }
 	  for(int k = 0; k < DIM_2; k++){
-	    tensor_rule.x[i*r2.N+j][DIM_1+k] = r2.x[j][k];
+	    tensor_rule.x[i*r2.N+j][DIM_1+k] = NODE_t(r2.x[j][k]);
 	  }
 	}
       }

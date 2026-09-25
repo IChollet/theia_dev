@@ -77,8 +77,8 @@ int main(int argc, char* argv[]){
   // P2M matrices
   CPLX *P2M_x = nullptr;
   CPLX *P2M_y = nullptr;
-  theia::P2M(minsX, maxsX, Nx, X, L, P2M_x, info);
-  theia::P2M(minsY, maxsY, Ny, Y, L, P2M_y, info);
+  theia::P2M(minsX, maxsX, Nx, X, LL, P2M_x, info);
+  theia::P2M(minsY, maxsY, Ny, Y, LL, P2M_y, info);
 
   // M2M matrices
   theia::Kron<DIM,CPLX> M2M_x;
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]){
   
   // M2L matrices
   CPLX *M2L = nullptr;
-  theia::M2L(minsXu, maxsXu, L, minsYu, maxsYu, L, Kernel, M2L, info);
+  theia::M2L(minsXu, maxsXu, LL, minsYu, maxsYu, LL, Kernel, M2L, info);
 
   // Apply matrices
   int Ld = theia::myintpow(L,DIM);

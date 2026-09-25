@@ -19,9 +19,9 @@ int main(){
 
   // Initialise (randomly) the matrices
   CPLX** A = new CPLX*[DIM];
-  CPLX * q = new CPLX[NN];
-  CPLX * r = new CPLX[MM];
-  CPLX * e = new CPLX[MM];
+  CPLX * q = new CPLX[MM];
+  CPLX * r = new CPLX[NN];
+  CPLX * e = new CPLX[NN];
   for(int i = 0; i < DIM; i++){
     A[i] = new CPLX[M[i]*N[i]];
     for(int ii = 0; ii < M[i]; ii++){
@@ -30,8 +30,8 @@ int main(){
       }
     }
   }
-  for(int i = 0; i < NN; i++){q[i] = CPLX(urand);}
-  for(int i = 0; i < MM; i++){r[i] = CPLX(urand);}
+  for(int i = 0; i < MM; i++){q[i] = CPLX(urand);}
+  for(int i = 0; i < NN; i++){r[i] = CPLX(urand);}
 
   // Get Kronecker struct
   theia::Kron<DIM,CPLX> K(A,M,N);
@@ -45,7 +45,7 @@ int main(){
   // Verify result
   double num = 0.;
   double div = 0.;
-  for(int i = 0; i < MM; i++){
+  for(int i = 0; i < NN; i++){
     num += std::abs(e[i]-r[i]);
     div += std::abs(e[i]);
   }

@@ -21,15 +21,12 @@ namespace theia{
           std::cout << "order < 1 in gauss-legendre computation" << std::endl;
           exit(1);
         }
-
         std::vector<FLT> d(order, FLT(0));
         std::vector<FLT> e(std::max(0, order - 1));
-
         for (int i = 0; i < order - 1; i++){
           const FLT k = FLT(i + 1);
           e[i] = k / std::sqrt(FLT(4) * k * k - FLT(1));
         }
-
         std::vector<FLT> eigvals(order);
         std::vector<FLT> eigvecs(order * order);
         constexpr char JOBZ  = 'V';
@@ -45,7 +42,6 @@ namespace theia{
         std::vector<int> isuppz(2 * std::max(1, order));
         int lwork  = -1;
         int liwork = -1;
-
         if constexpr (std::is_same_v<FLT,double>){
           double work_query;
           int iwork_query;
@@ -82,20 +78,15 @@ namespace theia{
           std::cout << "STEVR failed in gauss-legendre computation" << std::endl;
           exit(1);
         }
-
         rule_type<FLT> result;
         result.N = order;
         result.x.resize(order);
         for(int i = 0; i < order; i++){
-          result.x[i][0] = eigvals[i];
-        }
-
+          result.x[i][0] = eigvals[i];}
         result.w.resize(order);
         for (int i = 0; i < order; i++){
           const FLT v0 = eigvecs[i * order];
-          result.w[i] = FLT(2) * v0 * v0;
-        }
-
+          result.w[i] = FLT(2) * v0 * v0;}
         return result;
       }
 
