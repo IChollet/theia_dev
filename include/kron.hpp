@@ -168,7 +168,11 @@ namespace theia{
       permutations_transpose.clear();
     }
         
-    void prcmp(){compute_permutations(Ms,Ns,permutations);}
+    // Precompute the permutations of both gemm (sizes of A_d) and gemTm (sizes of A_d^T)
+    void prcmp(){
+      compute_permutations(Ms,Ns,permutations);
+      compute_permutations(Ns,Ms,permutations_transpose);
+    }
 
     // Read access to the d-th factor (Ms[d] x Ns[d], column major)
     int rows  (int d) const {return Ms[d];}
