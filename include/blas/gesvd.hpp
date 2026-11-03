@@ -21,6 +21,10 @@
 //====================================================================
 #ifndef THEIA_BLAS_GESVD_HPP
 #define THEIA_BLAS_GESVD_HPP
+#include <algorithm>
+#include <cmath>
+#include <stdexcept>
+#include <string>
 #include "./blas_parser_consts.hpp"
 #include "../matrices/lrmat.hpp"
 
@@ -32,6 +36,16 @@ extern "C"{
 }
 
 namespace theia{
+
+  // Raw LAPACK routines overloaded on the scalar type (resolved at compile time, C++11 compatible)
+  namespace lapack{
+    inline void gesvd(const char* jobu, const char* jobvt, const int* m, const int* n, BLAS_C* a, const int* lda, BLAS_S* s,
+		      BLAS_C* u, const int* ldu, BLAS_C* vt, const int* ldvt, BLAS_C* work, const int* lwork, BLAS_S* rwork, int* info){
+      cgesvd_(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);}
+    inline void gesvd(const char* jobu, const char* jobvt, const int* m, const int* n, BLAS_Z* a, const int* lda, BLAS_D* s,
+		      BLAS_Z* u, const int* ldu, BLAS_Z* vt, const int* ldvt, BLAS_Z* work, const int* lwork, BLAS_D* rwork, int* info){
+      zgesvd_(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);}
+  } // LAPACK
     
   inline void gesvd( BLAS_S *A, BLAS_S *U, BLAS_S *s, BLAS_S *V, int NbRow, int NbCol){
     int n = NbRow; int m = NbCol; int INF; int minMN = (n<m ? n : m);
@@ -85,15 +99,9 @@ namespace theia{
     int info = 0, lwork = -1;
     std::complex<FLT> work_query{};
     auto call = [&](std::complex<FLT>* work_ptr, int lwork_val) {
-      if constexpr (std::is_same_v<FLT, float>) {
-	cgesvd_(&jobu, &jobvt, &m, &n, A, &lda, S.data(),
-		U.data(), &ldu, VT.data(), &ldvt, work_ptr,
-		&lwork_val, rwork.data(), &info);
-      }else{
-	zgesvd_(&jobu, &jobvt, &m, &n, A, &lda, S.data(),
-		U.data(), &ldu, VT.data(), &ldvt, work_ptr,
-		&lwork_val, rwork.data(), &info);
-      }
+      lapack::gesvd(&jobu, &jobvt, &m, &n, A, &lda, S.data(),
+		    U.data(), &ldu, VT.data(), &ldvt, work_ptr,
+		    &lwork_val, rwork.data(), &info);
     };
     call(&work_query, -1);
     lwork = static_cast<int>(work_query.real());

@@ -1,6 +1,10 @@
 #ifndef THEIA_PARSER_EIGENVALUES_HPP
 #define THEIA_PARSER_EIGENVALUES_HPP
 
+#include <algorithm>
+#include <cstdlib>
+#include <stdexcept>
+#include <string>
 #include "./blas_parser_consts.hpp"
 
 extern "C"{
@@ -30,6 +34,26 @@ extern "C"{
 }
 
 namespace theia{
+
+  // Raw LAPACK routines overloaded on the scalar type (resolved at compile time, C++11 compatible)
+  namespace lapack{
+    inline void stevr(const char* jobz, const char* range, const int* n, float* d, float* e, const float* vl, const float* vu,
+		      const int* il, const int* iu, const float* abstol, int* m, float* w, float* z, const int* ldz, int* isuppz,
+		      float* work, const int* lwork, int* iwork, const int* liwork, int* info){
+      sstevr_(jobz, range, n, d, e, vl, vu, il, iu, abstol, m, w, z, ldz, isuppz, work, lwork, iwork, liwork, info);}
+    inline void stevr(const char* jobz, const char* range, const int* n, double* d, double* e, const double* vl, const double* vu,
+		      const int* il, const int* iu, const double* abstol, int* m, double* w, double* z, const int* ldz, int* isuppz,
+		      double* work, const int* lwork, int* iwork, const int* liwork, int* info){
+      dstevr_(jobz, range, n, d, e, vl, vu, il, iu, abstol, m, w, z, ldz, isuppz, work, lwork, iwork, liwork, info);}
+    inline void geev(const char* jobvl, const char* jobvr, const int* n, std::complex<float>* a, const int* lda,
+		     std::complex<float>* w, std::complex<float>* vl, const int* ldvl, std::complex<float>* vr, const int* ldvr,
+		     std::complex<float>* work, const int* lwork, float* rwork, int* info){
+      cgeev_(jobvl, jobvr, n, a, lda, w, vl, ldvl, vr, ldvr, work, lwork, rwork, info);}
+    inline void geev(const char* jobvl, const char* jobvr, const int* n, std::complex<double>* a, const int* lda,
+		     std::complex<double>* w, std::complex<double>* vl, const int* ldvl, std::complex<double>* vr, const int* ldvr,
+		     std::complex<double>* work, const int* lwork, double* rwork, int* info){
+      zgeev_(jobvl, jobvr, n, a, lda, w, vl, ldvl, vr, ldvr, work, lwork, rwork, info);}
+  } // LAPACK
 
   template<typename FLT> inline void syev(int n, FLT* a, FLT* w){
     std::cout << "Real SYEV undefined for called template" << std::endl; exit(1);}
@@ -102,15 +126,9 @@ namespace theia{
     std::vector<FLT> rwork(static_cast<std::size_t>(std::max(int(1), 2 * n)));
     std::complex<FLT> work_query{};
     auto call = [&](std::complex<FLT>* work_ptr, int lwork_val) {
-      if constexpr (std::is_same_v<FLT, float>) {
-	cgeev_(&jobvl, &jobvr, &n, A, &lda, W.data(), nullptr,
-	       &ldvl, nullptr, &ldvr, work_ptr, &lwork_val,
-	       rwork.data(), &info);
-      }else{
-	zgeev_(&jobvl, &jobvr, &n, A, &lda, W.data(), nullptr,
-	       &ldvl, nullptr, &ldvr, work_ptr, &lwork_val,
-	       rwork.data(), &info);
-      }
+      lapack::geev(&jobvl, &jobvr, &n, A, &lda, W.data(), nullptr,
+		   &ldvl, nullptr, &ldvr, work_ptr, &lwork_val,
+		   rwork.data(), &info);
     };
     call(&work_query, -1);
     lwork = static_cast<int>(work_query.real());

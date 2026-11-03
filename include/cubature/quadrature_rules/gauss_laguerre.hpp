@@ -75,25 +75,20 @@ namespace theia{
 	std::vector<int> isuppz(2 * std::max(1, order));
 	int lwork  = -1;
 	int liwork = -1;
-	if constexpr (std::is_same_v<FLT,double>){
-	  double work_query;
-	  int iwork_query;
-	  dstevr_(&JOBZ, &RANGE,&order,d.data(),e.data(),&vl, &vu,&il, &iu,&abstol,&m,eigvals.data(),eigvecs.data(),&ldz,isuppz.data(),&work_query,&lwork,&iwork_query,&liwork,&info);
-	  lwork  = static_cast<int>(work_query);
-	  liwork = iwork_query;
-	  std::vector<double> work(lwork);
-	  std::vector<int>    iwork(liwork);
-	  dstevr_(&JOBZ, &RANGE,&order,d.data(),e.data(),&vl, &vu,&il, &iu,&abstol,&m,eigvals.data(),eigvecs.data(),&ldz,isuppz.data(),work.data(),&lwork,iwork.data(),&liwork,&info);
-	}else{
-	  float work_query;
-	  int iwork_query;
-	  sstevr_(&JOBZ, &RANGE,&order,d.data(),e.data(),&vl, &vu,&il, &iu,&abstol,&m,eigvals.data(),eigvecs.data(),&ldz,isuppz.data(),&work_query,&lwork,&iwork_query,&liwork,&info);
-	  lwork  = static_cast<int>(work_query);
-	  liwork = iwork_query;
-	  std::vector<float> work(lwork);
-	  std::vector<int>    iwork(liwork);
-	  sstevr_(&JOBZ, &RANGE,&order,d.data(),e.data(),&vl, &vu,&il, &iu,&abstol,&m,eigvals.data(),eigvecs.data(),&ldz,isuppz.data(),work.data(),&lwork,iwork.data(),&liwork,&info);
-	}
+	FLT work_query;
+	int iwork_query;
+	lapack::stevr(&JOBZ, &RANGE, &order, d.data(), e.data(),
+	              &vl, &vu, &il, &iu, &abstol, &m,
+	              eigvals.data(), eigvecs.data(), &ldz, isuppz.data(),
+	              &work_query, &lwork, &iwork_query, &liwork, &info);
+	lwork  = static_cast<int>(work_query);
+	liwork = iwork_query;
+	std::vector<FLT> work(lwork);
+	std::vector<int> iwork(liwork);
+	lapack::stevr(&JOBZ, &RANGE, &order, d.data(), e.data(),
+	              &vl, &vu, &il, &iu, &abstol, &m,
+	              eigvals.data(), eigvecs.data(), &ldz, isuppz.data(),
+	              work.data(), &lwork, iwork.data(), &liwork, &info);
 	if (info != 0){std::cout << "STEVR failed in gauss-laguerre computation" << std::endl; exit(1);}
 
 	// Set the result

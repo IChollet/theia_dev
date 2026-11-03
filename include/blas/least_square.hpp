@@ -1,5 +1,8 @@
 #ifndef THEIA_BLAS_LEAST_SQUARE_HPP
 #define THEIA_BLAS_LEAST_SQUARE_HPP
+#include <algorithm>
+#include <stdexcept>
+#include <string>
 #include "./blas_parser_consts.hpp"
 
 extern "C" {
@@ -21,6 +24,18 @@ void zgelss_(const int* m, const int* n,
 
 namespace theia{
 
+  // Raw LAPACK routines overloaded on the scalar type (resolved at compile time, C++11 compatible)
+  namespace lapack{
+    inline void gelss(const int* m, const int* n, const int* nrhs, std::complex<float>* a, const int* lda,
+		      std::complex<float>* b, const int* ldb, float* s, const float* rcond, int* rank,
+		      std::complex<float>* work, const int* lwork, float* rwork, int* info){
+      cgelss_(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, rwork, info);}
+    inline void gelss(const int* m, const int* n, const int* nrhs, std::complex<double>* a, const int* lda,
+		      std::complex<double>* b, const int* ldb, double* s, const double* rcond, int* rank,
+		      std::complex<double>* work, const int* lwork, double* rwork, int* info){
+      zgelss_(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, rwork, info);}
+  } // LAPACK
+
   // Compute the solution of the complex least square problem min_x ||Ax-b||
   // WARNING: this routine erases b to store the result
   template <typename FLT>
@@ -32,15 +47,9 @@ namespace theia{
     FLT rcond = FLT(-1);
     std::complex<FLT> work_query{};
     auto call = [&](std::complex<FLT>* work_ptr, int lwork_val) {
-      if constexpr (std::is_same_v<FLT, float>){
-	cgelss_(&m, &n, &nrhs, A, &lda, b, &ldb, S.data(),
-		&rcond, &rank, work_ptr, &lwork_val,
-		rwork.data(), &info);
-      }else{
-	zgelss_(&m, &n, &nrhs, A, &lda, b, &ldb, S.data(),
-		&rcond, &rank, work_ptr, &lwork_val,
-		rwork.data(), &info);
-      }
+      lapack::gelss(&m, &n, &nrhs, A, &lda, b, &ldb, S.data(),
+		    &rcond, &rank, work_ptr, &lwork_val,
+		    rwork.data(), &info);
     };
     call(&work_query, -1);
     lwork = static_cast<int>(work_query.real());

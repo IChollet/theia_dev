@@ -23,6 +23,9 @@
 #define THEIA_MAIN_HEADER
 
 #include "general_intrp.hpp"
+#include "blas/blas.hpp"
 #include "operators/operators.hpp"
+#include "cubature/cubature.hpp"
+#include "expansion/expansion.hpp"
 
 #endif

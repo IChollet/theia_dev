@@ -1,6 +1,8 @@
 #ifndef THEIA_MATRICES_LOW_RANK_MATRICES_HPP
 #define THEIA_MATRICES_LOW_RANK_MATRICES_HPP
 
+#include <cstdlib>
+
 namespace theia{
 
   template<typename FLT>
