@@ -154,7 +154,7 @@ namespace theia{
     
   public :
 
-    Kron(){};
+    Kron(){}
     
     Kron(T** matrices_, int* Ms_, int* Ns_){set(matrices_,Ms_,Ns_);}
 
